@@ -1,5 +1,6 @@
 import LogsHTTPs from "../../models/logsHTTP.js";
 import MonitorServers from "../../models/monitorServer.js";
+import { ServiceServers } from "../../services/serverServices.js";
 
 export const createLogsManualServers = async (req, res) => {
     const { uuidServers } = req.body;

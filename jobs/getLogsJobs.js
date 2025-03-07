@@ -30,6 +30,7 @@ export const StartBackgroundLogs = async () => {
         "1M": 60000,
         "5M": 300000,
         "10M": 600000,
+        "15M": 900000,
     };
 
     const startMonitoring = (interval, statusCheck) => {
@@ -40,7 +41,7 @@ export const StartBackgroundLogs = async () => {
             for (const monitor of monitorHTTPs) {
                 await ServiceHTTPs(monitor);
             }
-
+            
             for (const monitor of monitorServers) {
                 await ServiceServers(monitor);
             }

@@ -40,6 +40,11 @@ const LogsHTTPs = db.define('logs_https', {
             notEmpty: true,
         }
     },
+    uptime: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: "N/A",
+    },
 
 }, {
     timestamps: true,

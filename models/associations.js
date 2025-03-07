@@ -4,7 +4,7 @@ import LogsPorts from "./logsPort.js";
 import LogsServers from "./logsServer.js";
 import MonitorHTTPs from "./monitorHTTP.js";
 import MonitorNetworks from "./monitorNetwork.js";
-import MonitorPorts from "./monitorPORT.js";
+import MonitorPorts from "./monitorPorts.js";
 import MonitorServers from "./monitorServer.js";
 import Users from "./userModels.js";
 

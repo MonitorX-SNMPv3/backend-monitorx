@@ -100,7 +100,7 @@ def SNMPGetDiskUsage(host, user, auth_key, priv_key, port):
     return result
 
 
-def SNMPGetInfo(attribute, max_retries=5, retry_delay=2):
+def SNMPGetInfo(attribute, max_retries=5):
     OIDS = {
         "status": "1.3.6.1.2.1.25.1.1.0",
         "uptime": "1.3.6.1.2.1.1.3.0",
@@ -138,7 +138,6 @@ def SNMPGetInfo(attribute, max_retries=5, retry_delay=2):
             break 
 
         attempt += 1
-        time.sleep(retry_delay)
 
     uptime = format_uptime(uptime) if uptime else "N/A"
     cpu_usage = f'{round(cpu_usage / 100, 2)}%' if cpu_usage else "N/A"

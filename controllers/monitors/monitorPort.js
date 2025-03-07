@@ -1,4 +1,4 @@
-import MonitorPorts from "../../models/monitorPort.js";
+import MonitorPorts from "../../models/monitorPorts.js";
 import Users from "../../models/userModels.js";
 
 export const createMonitorPorts = async (req, res) => {
