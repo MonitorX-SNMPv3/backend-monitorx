@@ -16,10 +16,10 @@ export const createUsers = async (req, res) => {
 
     try {        
         await Users.create({ 
-            type, 
-            name, 
-            email,
-            hashedPass, 
+            type: type, 
+            name: name, 
+            email: email,
+            password: hashedPass, 
         });
         res.status(201).json({ msg: "User berhasil ditambahkan"})
     } catch (error) {

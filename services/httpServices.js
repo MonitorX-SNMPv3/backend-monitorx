@@ -88,7 +88,9 @@ const HandleUptimeWithStatusCheck = (data) => {
 }
 
 const CalculateUptimeHTTPs = async (attribute) => {
-    const LogsData = await LogsHTTPs.findOne({ where: {uuidHTTPs: attribute.uuidHTTPs}, order: [['createdAt', 'DESC']] });
+    const LogsData = await LogsHTTPs.findOne({ 
+        where: {uuidHTTPs: attribute.uuidHTTPs}, 
+        order: [['createdAt', 'DESC']] });
 
     if (!LogsData) {
         return HandleUptimeWithStatusCheck(attribute.statusCheck);
@@ -102,7 +104,7 @@ const CalculateUptimeHTTPs = async (attribute) => {
     let prevCreatedTimeMS = ConvertLocaleStringToMS(prevCreatedLogs);
     let nowCreatedTimeMS = ConvertLocaleStringToMS(nowCreatedLogs);
 
-    if ( uptimePrev === "N/A" ){
+    if ( uptimePrev !== "N/A" ){
         uptimePrev = ConvertUptimeToMs(uptimePrev);
         let uptimeNow = (nowCreatedTimeMS - prevCreatedTimeMS) + uptimePrev
         
@@ -110,8 +112,7 @@ const CalculateUptimeHTTPs = async (attribute) => {
         return ConvertMStoFormatUptime(uptimeNow);
     } 
 
-    //** Kondisi Apabile data sebelumnya down (Ingat ganti !== jadi ===) */
-    else if ( uptimePrev !== "N/A" || !uptimePrev ) {
+    else if ( uptimePrev === "N/A" ) {
         return HandleUptimeWithStatusCheck(attribute.statusCheck);
     }
 }
@@ -147,13 +148,13 @@ export const ServiceHTTPs = async (attribute) => {
         statusCode = error.response?.status || 502;
     }
     
-    await LogsHTTPs.create({
-        uuidHTTPs: attribute.uuidHTTPs,
-        status: status,
-        responseTime: responseTime,
-        statusCode: statusCode,
-        uptime: uptime,
-    });
+    // await LogsHTTPs.create({
+    //     uuidHTTPs: attribute.uuidHTTPs,
+    //     status: status,
+    //     responseTime: responseTime,
+    //     statusCode: statusCode,
+    //     uptime: uptime,
+    // });
 
     console.log(`[${new Date().toLocaleString()}] - HTTP Logs - ${attribute.hostname} (${ip}), Uptime: ${uptime}, Status: ${status}, Response Time: ${responseTime}ms, Code: ${statusCode}`);
 } 

@@ -12,9 +12,12 @@
     "argon2": "^0.41.1",
     "axios": "^1.8.1",
     "child_process": "^1.0.2",
+    "connect-session-sequelize": "^7.1.7",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
     "epxress": "^0.0.1-security",
     "express": "^4.21.2",
+    "express-session": "^1.18.1",
     "mysql2": "^3.12.0",
     "ping": "^0.4.4",
     "sequelize": "^6.37.5"
