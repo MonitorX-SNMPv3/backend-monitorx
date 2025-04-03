@@ -22,7 +22,7 @@ export const SignIn = async (req, res) => {
     const name = user.name;
     const email = user.email;
 
-    console.log(req.session.userID);
+    console.log(req.session);
     
 
     res.status(200).json({ uuid, name, email });

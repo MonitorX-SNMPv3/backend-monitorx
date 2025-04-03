@@ -140,7 +140,7 @@ def SNMPGetInfo(attribute, max_retries=5):
         attempt += 1
 
     uptime = format_uptime(uptime) if uptime else "N/A"
-    cpu_usage = f'{round(cpu_usage / 100, 2)}%' if cpu_usage else "N/A"
+    cpu_usage = f'{round(cpu_usage / 100, 2)}%' if cpu_usage is not None else "N/A"
     disk_usage = disk_usage if disk_usage else "N/A"
 
     if ram_total and ram_available:

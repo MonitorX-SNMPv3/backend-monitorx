@@ -24,3 +24,14 @@ export const HTTPGetLogsALL = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch HTTPs Logs" })
     }
 }
+
+export const SelectedHTTPsGetLogs = async (req, res) => {
+    const { uuidHTTPs } =  req.body;
+
+    try {
+        const monitor = await LogsHTTPs.findAll({ where: { uuidHTTPs: uuidHTTPs } });
+        res.status(200).json(monitor);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch HTTPs Logs" })
+    }
+}

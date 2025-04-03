@@ -1,3 +1,7 @@
+import IncidentsHTTPs from "./incidentsHTTP.js";
+import IncidentsNetworks from "./incidentsNetwork.js";
+import IncidentsPorts from "./incidentsPort.js";
+import IncidentsServers from "./incidentsServer.js";
 import LogsHTTPs from "./logsHTTP.js";
 import LogsNetworks from "./logsNetwork.js";
 import LogsPorts from "./logsPort.js";
@@ -50,6 +54,13 @@ MonitorHTTPs.hasMany(LogsHTTPs, {
     onUpdate: "CASCADE",
     constraints: true,
 });
+MonitorHTTPs.hasMany(IncidentsHTTPs, {
+    foreignKey: "uuidHTTPs",
+    as: "incidents_https",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    constraints: true,
+});
 
 //? Relasi Ports */
 MonitorPorts.belongsTo(Users, {
@@ -59,6 +70,13 @@ MonitorPorts.belongsTo(Users, {
 MonitorPorts.hasMany(LogsPorts, {
     foreignKey: "uuidPorts",
     as: "logs_ports",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    constraints: true,
+});
+MonitorPorts.hasMany(IncidentsPorts, {
+    foreignKey: "uuidPorts",
+    as: "incidents_ports",
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
     constraints: true,
@@ -76,6 +94,13 @@ MonitorServers.hasMany(LogsServers, {
     onUpdate: "CASCADE",
     constraints: true,
 });
+MonitorServers.hasMany(IncidentsServers, {
+    foreignKey: "uuidServers",
+    as: "incidents_servers",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    constraints: true,
+});
 
 //? Relasi Networks */
 MonitorNetworks.belongsTo(Users, {
@@ -89,23 +114,48 @@ MonitorNetworks.hasMany(LogsNetworks, {
     onUpdate: "CASCADE",
     constraints: true,
 });
+MonitorNetworks.hasMany(IncidentsNetworks, {
+    foreignKey: "uuidNets",
+    as: "incidents_networks",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    constraints: true,
+});
 
 //? Relasi Logs */
 LogsHTTPs.belongsTo(MonitorHTTPs, {
     foreignKey: "uuidHTTPs",
     as: "logs_https",
-})
+});
 LogsNetworks.belongsTo(MonitorNetworks, {
     foreignKey: "uuidNets",
     as: "logs_networks",
-})
+});
 LogsPorts.belongsTo(MonitorPorts, {
     foreignKey: "uuidPorts",
     as: "logs_ports",
-})
+});
 LogsServers.belongsTo(MonitorServers, {
     foreignKey: "uuidServers",
     as: "logs_servers",
-})
+});
+
+//? Relasi Incidents */
+IncidentsHTTPs.belongsTo(MonitorHTTPs, {
+    foreignKey: "uuidHTTPs",
+    as: "incidents_https",
+});
+IncidentsNetworks.belongsTo(MonitorNetworks, {
+    foreignKey: "uuidNets",
+    as: "incidents_networks",
+});
+IncidentsPorts.belongsTo(MonitorPorts, {
+    foreignKey: "uuidPorts",
+    as: "incidents_ports",
+});
+IncidentsServers.belongsTo(MonitorServers, {
+    foreignKey: "uuidServers",
+    as: "incidents_servers",
+});
 
 export { Users, MonitorHTTPs, MonitorNetworks, MonitorPorts, MonitorServers };

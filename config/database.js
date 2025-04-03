@@ -1,26 +1,21 @@
-import mysql from "mysql2/promise";
 import { Sequelize } from "sequelize";
+import dotenv from "dotenv";
 
-const databaseName = "monitorx_db";
+dotenv.config();
 
-// Buat koneksi sementara ke MySQL tanpa memilih database
-const connection = await mysql.createConnection({ 
-    host: "localhost", 
-    user: "root", 
-    password: "" 
+const db = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+    host: process.env.DB_HOST,
+    port: 5432,
+    dialect: "postgres",
+    logging: false  
 });
 
-// Buat database jika belum ada
-await connection.query(`CREATE DATABASE IF NOT EXISTS ${databaseName}`);
-
-const db = new Sequelize(databaseName, "root", "", {
-    host: "localhost",
-    dialect: "mysql",
-    timezone: "+07:00",
-    logging: false,
-    dialectOptions: {
-        dateStrings: true,
-    }
-});
+try {
+    await db.authenticate();
+    await db.sync({ alter: true });
+    console.log("Connected to PostgreSQL");
+} catch (error) {
+    console.error("Unable to connect:", error);
+}
 
 export default db;

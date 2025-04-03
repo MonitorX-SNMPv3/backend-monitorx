@@ -7,7 +7,7 @@ import monitorRouter from "./routers/monitorRouter.js";
 import userRouter from "./routers/userRouter.js";
 import logsRouter from "./routers/logsRouter.js";
 import authRouter from "./routers/authRouter.js";
-import { StartBackgroundLogs } from "./jobs/getLogsJobs.js";
+import { StartBackgroundLogs } from "./jobs/LogsJobs.js";
 import session from "express-session";
 import SequelizeStore from "connect-session-sequelize";
 
@@ -17,7 +17,8 @@ const app = express();
 const sessionStore = SequelizeStore(session.Store);
 
 const store = new sessionStore({
-    db: db
+    db: db,
+    tableName: "Sessions"
 });
 
 (async () => {
@@ -30,17 +31,19 @@ const store = new sessionStore({
 app.use(session({
     secret: process.env.SESS_SECRET,
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     store: store,
     cookie: {
-        secure: 'auto',
+        secure: false,
+        httpOnly: false,
+        sameSite: "lax",
         maxAge: 15 * 60 * 1000, //15 Menit
     }
 }));
 
 app.use(cors({
     credentials: true,
-    origin: ['http://127.0.0.1:5173', 'http://localhost:3000']
+    origin: ['http://localhost:3000']
 }))
 
 app.use(express.json());

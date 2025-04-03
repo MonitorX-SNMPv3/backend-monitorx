@@ -2,6 +2,7 @@ import ping from "ping";
 import path from "path";
 import { spawn } from "child_process";
 import LogsServers from "../models/logsServer.js";
+import { createIncidentsServers } from "../controllers/incidents/incidentsServer.js";
 
 export const ServiceServers = async (attribute) => {
     const ip = attribute.ipaddress;
@@ -11,13 +12,14 @@ export const ServiceServers = async (attribute) => {
     
     try {
         const serverResponse = await ping.promise.probe(ip, { timeout: 2 });
-        status = serverResponse.alive ? "UP" : "DOWN";
+        // status = serverResponse.alive ? "UP" : "DOWN";  
     
-        if (status == "UP") {
+        if (status === "UP") {
             responseTime = serverResponse.time;
             statusCode = 200;
     
             result = await ServiceSNMPGetStatus(attribute);
+            console.log(`[${new Date().toLocaleString()}] - CPU: ${result.cpu_usage}, RAM: ${result.ram_usage}, DISK: ${result.disk_usage}, UPTIME: ${result.uptime}`);
             
             uptime = result.uptime;
             cpuUsage = result.cpu_usage;
@@ -26,21 +28,28 @@ export const ServiceServers = async (attribute) => {
         } else {
             statusCode = 502;
             responseTime = 0;
+            console.log(serverResponse.output);
+            
+            console.log(`[${new Date().toLocaleString()}] - Server Down, Creating Incidents  (${attribute.ipaddress})`);
+            await createIncidentsServers(attribute, statusCode);
         }
     } catch (error) {
+        console.log(error);
+        
         statusCode = error.response?.status || 502;
     }
 
-    await LogsServers.create({
-        uuidServers: attribute.uuidServers,
-        status: status,
-        responseTime: responseTime,
-        uptime: uptime,
-        cpuUsage: cpuUsage,
-        ramUsage: ramUsage,
-        diskUsage: diskUsage,
-        statusCode: statusCode,
-    })
+    // await LogsServers.create({
+    //     uuidServers: attribute.uuidServers,
+    //     status: status,
+    //     responseTime: responseTime,
+    //     uptime: uptime,
+    //     cpuUsage: cpuUsage,
+    //     ramUsage: ramUsage,
+    //     diskUsage: diskUsage,
+    //     statusCode: statusCode,
+    // });
+    
     console.log(`[${new Date().toLocaleString()}] - Server SNMP - (${attribute.ipaddress}) - Status: ${status}, Response Time: ${responseTime}, Code: ${statusCode}`);
 };
 
@@ -57,7 +66,7 @@ export const ServiceSNMPGetStatus = async (attribute) => {
             snmp_privkey: attribute.snmp_privkey,
             snmp_port: attribute.snmp_port,
         });
-
+        
         // Send input to Python script
         processPy.stdin.write(serverAttribute);
         processPy.stdin.end();

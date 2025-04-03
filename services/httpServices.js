@@ -148,13 +148,13 @@ export const ServiceHTTPs = async (attribute) => {
         statusCode = error.response?.status || 502;
     }
     
-    // await LogsHTTPs.create({
-    //     uuidHTTPs: attribute.uuidHTTPs,
-    //     status: status,
-    //     responseTime: responseTime,
-    //     statusCode: statusCode,
-    //     uptime: uptime,
-    // });
+    await LogsHTTPs.create({
+        uuidHTTPs: attribute.uuidHTTPs,
+        status: status,
+        responseTime: responseTime,
+        statusCode: statusCode,
+        uptime: uptime,
+    });
 
     console.log(`[${new Date().toLocaleString()}] - HTTP Logs - ${attribute.hostname} (${ip}), Uptime: ${uptime}, Status: ${status}, Response Time: ${responseTime}ms, Code: ${statusCode}`);
 } 

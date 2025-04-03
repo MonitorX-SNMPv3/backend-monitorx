@@ -27,10 +27,13 @@ import { ServiceServers } from "../services/serverServices.js";
 export const StartBackgroundLogs = async () => {
     const intervalMapping = {
         "15S": 15000,
+        "30S": 30000,
         "1M": 60000,
         "5M": 300000,
         "10M": 600000,
         "15M": 900000,
+        "30M": 1800000,
+        "1H": 3600000,
     };
 
     const startMonitoring = (interval, statusCheck) => {
