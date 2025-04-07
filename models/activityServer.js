@@ -2,8 +2,8 @@ import { DataTypes } from "sequelize";
 import db from "../config/database.js";
 
 
-const IncidentsNetworks = db.define('incidents_networks', {
-    uuidIncidents: {
+const ActivityServer = db.define('activity_servers', {
+    uuidActivity: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         allowNull: false,
@@ -12,44 +12,22 @@ const IncidentsNetworks = db.define('incidents_networks', {
             notEmpty: true,
         }
     },
-    uuidNets: {
+    uuidIncidents: {
         type: DataTypes.UUID,
         allowNull: false,
         validate: {
             notEmpty: true,
         }
     },
-    status: {
+    description: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
             notEmpty: true,
         }
     },
-    rootcause: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-            notEmpty: true,
-        }
-    },
-    started: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-            notEmpty: true,
-        }
-    },
-    resolved: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-    },
-    duration: {
-        type: DataTypes.STRING,
-        defaultValue: "TCP",
-    }
 }, {
     timestamps: true, // Sequelize akan otomatis menambahkan createdAt & updatedAt
 });
 
-export default IncidentsNetworks;
+export default ActivityServer;

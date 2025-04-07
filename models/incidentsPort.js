@@ -2,7 +2,7 @@ import { DataTypes } from "sequelize";
 import db from "../config/database.js";
 
 
-const IncidentsPorts = db.define('incidents_Ports', {
+const IncidentsPorts = db.define('incidents_ports', {
     uuidIncidents: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -41,8 +41,9 @@ const IncidentsPorts = db.define('incidents_Ports', {
         }
     },
     resolved: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: true,
+        defaultValue: "-"
     },
     duration: {
         type: DataTypes.STRING,

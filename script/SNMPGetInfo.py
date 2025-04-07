@@ -100,7 +100,7 @@ def SNMPGetDiskUsage(host, user, auth_key, priv_key, port):
     return result
 
 
-def SNMPGetInfo(attribute, max_retries=5):
+def SNMPGetInfo(attribute, max_retries=3):
     OIDS = {
         "status": "1.3.6.1.2.1.25.1.1.0",
         "uptime": "1.3.6.1.2.1.1.3.0",

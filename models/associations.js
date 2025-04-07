@@ -1,13 +1,13 @@
+import ActivityHTTPs from "./activityHTTP.js";
+import ActivityPort from "./activityPort.js";
+import ActivityServer from "./activityServer.js";
 import IncidentsHTTPs from "./incidentsHTTP.js";
-import IncidentsNetworks from "./incidentsNetwork.js";
 import IncidentsPorts from "./incidentsPort.js";
 import IncidentsServers from "./incidentsServer.js";
 import LogsHTTPs from "./logsHTTP.js";
-import LogsNetworks from "./logsNetwork.js";
 import LogsPorts from "./logsPort.js";
 import LogsServers from "./logsServer.js";
 import MonitorHTTPs from "./monitorHTTP.js";
-import MonitorNetworks from "./monitorNetwork.js";
 import MonitorPorts from "./monitorPorts.js";
 import MonitorServers from "./monitorServer.js";
 import Users from "./userModels.js";
@@ -34,13 +34,7 @@ Users.hasMany(MonitorPorts, {
     onUpdate: "CASCADE",
     constraints: true,
 });
-Users.hasMany(MonitorNetworks, {
-    foreignKey: "uuidUsers",
-    as: "monitors_networks",
-    onDelete: "CASCADE",
-    onUpdate: "CASCADE",
-    constraints: true,
-});
+
 
 //? Relasi HTTPs */
 MonitorHTTPs.belongsTo(Users, {
@@ -102,34 +96,10 @@ MonitorServers.hasMany(IncidentsServers, {
     constraints: true,
 });
 
-//? Relasi Networks */
-MonitorNetworks.belongsTo(Users, {
-    foreignKey: "uuidUsers",
-    as: "users"
-});
-MonitorNetworks.hasMany(LogsNetworks, {
-    foreignKey: "uuidNets",
-    as: "logs_networks",
-    onDelete: "CASCADE",
-    onUpdate: "CASCADE",
-    constraints: true,
-});
-MonitorNetworks.hasMany(IncidentsNetworks, {
-    foreignKey: "uuidNets",
-    as: "incidents_networks",
-    onDelete: "CASCADE",
-    onUpdate: "CASCADE",
-    constraints: true,
-});
-
 //? Relasi Logs */
 LogsHTTPs.belongsTo(MonitorHTTPs, {
     foreignKey: "uuidHTTPs",
     as: "logs_https",
-});
-LogsNetworks.belongsTo(MonitorNetworks, {
-    foreignKey: "uuidNets",
-    as: "logs_networks",
 });
 LogsPorts.belongsTo(MonitorPorts, {
     foreignKey: "uuidPorts",
@@ -145,17 +115,65 @@ IncidentsHTTPs.belongsTo(MonitorHTTPs, {
     foreignKey: "uuidHTTPs",
     as: "incidents_https",
 });
-IncidentsNetworks.belongsTo(MonitorNetworks, {
-    foreignKey: "uuidNets",
-    as: "incidents_networks",
+IncidentsHTTPs.hasMany(ActivityHTTPs, {
+    foreignKey: "uuidIncidents",
+    as: "activity_https",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    constraints: true,
 });
+
+
 IncidentsPorts.belongsTo(MonitorPorts, {
     foreignKey: "uuidPorts",
     as: "incidents_ports",
 });
+IncidentsPorts.hasMany(ActivityPort, {
+    foreignKey: "uuidIncidents",
+    as: "activity_port",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    constraints: true,
+});
+
+
 IncidentsServers.belongsTo(MonitorServers, {
     foreignKey: "uuidServers",
     as: "incidents_servers",
 });
+IncidentsServers.hasMany(ActivityServer, {
+    foreignKey: "uuidIncidents",
+    as: "activity_servers",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    constraints: true,
+});
 
-export { Users, MonitorHTTPs, MonitorNetworks, MonitorPorts, MonitorServers };
+ActivityServer.belongsTo(IncidentsServers, {
+    foreignKey: "uuidIncidents",
+    as: "incidents_servers",
+});
+ActivityPort.belongsTo(IncidentsPorts, {
+    foreignKey: "uuidIncidents",
+    as: "incidents_ports",
+});
+ActivityHTTPs.belongsTo(IncidentsHTTPs, {
+    foreignKey: "uuidIncidents",
+    as: "incidents_https",
+});
+
+export { 
+    Users, 
+    MonitorHTTPs, 
+    MonitorPorts, 
+    MonitorServers, 
+    LogsHTTPs, 
+    LogsPorts, 
+    LogsServers, 
+    IncidentsHTTPs, 
+    IncidentsPorts, 
+    IncidentsServers, 
+    ActivityHTTPs, 
+    ActivityPort, 
+    ActivityServer 
+};

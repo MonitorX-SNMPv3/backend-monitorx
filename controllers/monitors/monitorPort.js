@@ -19,8 +19,11 @@ export const createMonitorPorts = async (req, res) => {
             port: port,
             protocol: protocol,
             statusCheck: statusCheck,
+            running: "STARTED",
         });
 
+
+        console.log(`[${new Date().toLocaleString()}] - Monitor ${hostname} berhasil ditambahkan`);
         res.status(201).json({ msg: "Data Port Berhasil ditambahkan"})
         
     } catch (error) {

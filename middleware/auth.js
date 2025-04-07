@@ -1,18 +1,20 @@
-import Users from "../models/UserModel.js";
+import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
 
-export const VerifyUser = async (req, res, next) => {
-    if (!req.session.userID) { return res.status(400).json({ msg: "Harap login terlebih dahulu!" }) }
+dotenv.config();
 
-    const user = await Users.findOne({
-        where: {
-            uuid: req.session.userID
-        }
-    });
-
-    if (!user) {
-        return res.status(404).json({ msg: "User tidak ditemukan!" })
+export const VerifyUser = (req, res, next) => {
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    if (!token) {
+        return res.status(401).json({ error: "Token tidak disediakan" });
     }
 
-    req.userId = user.id;
-    next();
-}
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ error: "Token tidak valid atau telah kadaluarsa" });
+        }
+        // Simpan informasi pengguna dari token ke request
+        req.user = user;
+        next();
+    });
+}; 

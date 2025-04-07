@@ -37,8 +37,13 @@ const MonitorHTTPs = db.define('monitor_https', {
         allowNull: false,
         defaultValue: "5M",
     },
+    running: {
+        type: DataTypes.ENUM("STARTED", "PAUSED"),
+        allowNull: false,
+        defaultValue: "STARTED",
+    },
 }, {
-    timestamps: true, // Sequelize akan otomatis menambahkan createdAt & updatedAt
+    timestamps: true, 
 });
 
 export default MonitorHTTPs;

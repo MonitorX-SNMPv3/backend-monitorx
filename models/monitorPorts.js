@@ -48,7 +48,12 @@ const MonitorPorts = db.define('monitor_ports', {
     protocol: {
         type: DataTypes.STRING,
         defaultValue: "TCP",
-    }
+    },
+    running: {
+        type: DataTypes.ENUM("STARTED", "PAUSED"),
+        allowNull: false,
+        defaultValue: "STARTED",
+    },
 }, {
     timestamps: true, // Sequelize akan otomatis menambahkan createdAt & updatedAt
 });

@@ -1,57 +1,71 @@
 import Users from "../models/userModels.js";
 import argon2 from "argon2";
+import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
 
 export const SignIn = async (req, res) => {
-    const user = await Users.findOne({
-        where: {
-            email: req.body.email
+    dotenv.config();
+    try {
+        const { email, password, rememberMe } = req.body;
+        console.log(process.env.JWT_SECRET);
+        
+        const user = await Users.findOne({ where: { email } });
+        if (!user) {
+            return res.status(401).json({ error: "Email belum terdaftar!" });
         }
-    });
-
-    if (!user) {
-        return res.status(404).json({ msg: "User tidak ditemukan!" })
-    }
-
-    const match = await argon2.verify(user.password, req.body.password);
-    if (!match) {
-        return res.status(400).json({ msg: "Password Salah!" })
-    }
     
-    req.session.userID = user.uuidUsers;
-    const uuid = user.uuidUsers;
-    const name = user.name;
-    const email = user.email;
+        const validPassword = await argon2.verify(user.password, password);
 
-    console.log(req.session);
+        if (!validPassword) {
+            return res.status(401).json({ error: "Kata sandi Salah!" });
+        }
     
-
-    res.status(200).json({ uuid, name, email });
-}
+        const payload = {
+            uuidUsers: user.uuidUsers,
+            email: user.email,
+            name: user.name,
+            type: user.type,
+        };
+    
+        const expiresIn = rememberMe ? "7d" : "24h";
+    
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn });
+    
+        res.cookie("token", token, {
+            secure: "production",
+            sameSite: "none", 
+            httpOnly: true,
+            maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000, // in milliseconds
+        });
+    
+        res.json({ token, user: payload });
+    } catch (error) {
+        console.error("Login error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
 
 export const Me = async (req, res) => {
-    console.log("Incoming Session ID:", req.sessionID); // Debug session
-    console.log("Session Data:", req.session);
-
-    if (!req.session.userID) { return res.status(401).json({ msg: "Harap login terlebih dahulu!" }) }
-
-    const user = await Users.findOne({
-        attributes: ["uuidUsers", "name", "email"],
-        where: {
-            uuidUsers: req.session.userID
-        }
-    });
-
-    if (!user) {
-        return res.status(404).json({ msg: "User tidak ditemukan!" })
+    try {
+        res.status(200).json({ user: req.user });
+    } catch (error) {
+        console.error("Error pada endpoint /me:", error);
+        res.status(500).json({ error: "Internal server error" });
     }
-    res.status(200).json(user)
-}
+};
+
 
 export const SignOut = async (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            return res.status(400).json({ msg: "Tidak dapat Logout!" })
-        }
-        res.status(200).json({ msg: "Anda telah Logout!" })
-    })
+    try {
+        res.clearCookie("token", {
+            secure: "production",
+            sameSite: "none",
+            httpOnly: true,
+        });
+        res.status(200).json({ msg: "Logout Success!"});
+    } catch (error) {
+        console.error("Logout error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+
 }

@@ -3,27 +3,6 @@ import MonitorServers from "../models/monitorServer.js";
 import { ServiceHTTPs } from "../services/httpServices.js";
 import { ServiceServers } from "../services/serverServices.js";
 
-// import MonitorNetworks from "../models/monitorNetwork.js";
-// import MonitorPorts from "../models/monitorPORT.js";
-
-// export const StartBackgroundLogs1M = async () => {
-//     setInterval(async () => {
-//         const monitorHTTPs = await MonitorHTTPs.findAll({ where: { statusCheck: "1M" } });
-//         const monitorServers = await MonitorServers.findAll({ where: { statusCheck: "1M" } });
-//         // const monitorPorts = await MonitorPorts.findAll({});
-//         // const monitorRouter = await MonitorNetworks.findAll({});
-
-//         for (const monitor of monitorHTTPs) {
-//             await ServiceHTTPs(monitor);
-//         };
-        
-//         for (const monitor of monitorServers) {
-//             await ServiceServers(monitor);
-//         };
-        
-//     }, 60000);
-// };
-
 export const StartBackgroundLogs = async () => {
     const intervalMapping = {
         "15S": 15000,

@@ -40,6 +40,11 @@ const LogsPorts = db.define('logs_ports', {
             notEmpty: true,
         }
     },
+    uptime: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: "N/A",
+    }
 
 }, {
     timestamps: true,

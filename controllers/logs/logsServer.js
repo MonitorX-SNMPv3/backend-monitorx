@@ -17,9 +17,10 @@ export const createLogsManualServers = async (req, res) => {
             snmp_authkey: monitors.snmp_authkey,
             snmp_privkey: monitors.snmp_privkey,
             snmp_port: monitors.snmp_port,
+            running: monitors.running,
         }
         
-        console.log('Creating log server...');
+        console.log(`[${new Date().toLocaleString()}] - Creating log server...`);
         
         await ServiceServers(serverAttribute);
         res.status(201).json({ msg: "Log created successfully" });

@@ -65,6 +65,11 @@ const MonitorServers = db.define('monitor_servers', {
             notEmpty: true,
         }
     },
+    running: {
+        type: DataTypes.ENUM("STARTED", "PAUSED"),
+        allowNull: false,
+        defaultValue: "STARTED",
+    },
 }, {
     timestamps: true, // Sequelize akan otomatis menambahkan createdAt & updatedAt
 });

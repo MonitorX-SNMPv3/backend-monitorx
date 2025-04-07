@@ -1,195 +1,670 @@
+import IncidentsHTTPs from "../models/incidentsHTTP.js";
+import IncidentsPorts from "../models/incidentsPort.js";
+import IncidentsServers from "../models/incidentsServer.js";
 import LogsHTTPs from "../models/logsHTTP.js";
-import LogsNetworks from "../models/logsNetwork.js";
 import LogsPorts from "../models/logsPort.js";
 import LogsServers from "../models/logsServer.js";
 import MonitorHTTPs from "../models/monitorHTTP.js";
-import MonitorNetworks from "../models/monitorNetwork.js";
 import MonitorPorts from "../models/monitorPorts.js";
 import MonitorServers from "../models/monitorServer.js";
+import Users from "../models/userModels.js";
+import { SendEmail } from "../services/notifyEmail.js";
+import { ArraySummaryLogs, ArrayUptimeLogs } from "../utils/logsHelper.js";
+import { emailTemplate } from "../utils/templates/emailTemplate.js";
+import { getFormattedCurrentTime } from "../utils/time.js";
+import { parseDuration } from "../utils/uptimeHelper.js";
+import { Op } from "sequelize";
 
-const GetLogs = async (attribute, type) => {
-    const dateFormat = new Intl.DateTimeFormat('en-GB', {
-        weekday: 'long',
-        day: '2-digit',
-        month: 'long',
-        year: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-    });
-
-    let uptimeLogs = [];
-
-    if (!attribute?.length) return uptimeLogs;
-
-    for (let i = 0; i < attribute.length - 1; i++) {
-        let dataPrev = dateFormat.format(attribute[i]?.createdAt).split(" at ");
-        let dataNow = dateFormat.format(attribute[i + 1]?.createdAt).split(" at ");
-
-        let timePrev = `${dataPrev[1].split(":")[0]}:${dataPrev[1].split(":")[1]}`;
-        let timeNow = `${dataNow[1].split(":")[0]}:${dataNow[1].split(":")[1]}`;
-
-        let logEntry = {
-            status: attribute[i]?.status,
-            responseTime: attribute[i]?.responseTime,
-            date: `${dataPrev[0]}`,
-            timeRange: `${timePrev} - ${timeNow}`,
-            uptime: attribute[i]?.uptime,
-            statusCode: attribute[i]?.statusCode,
-        };
-
-        // Tambahkan hanya jika tipe adalah "server"
-        if (type === "server") {
-            logEntry.cpuUsage = attribute[i]?.cpuUsage;
-            logEntry.diskUsage = attribute[i]?.diskUsage;
-            logEntry.ramUsage = attribute[i]?.ramUsage;
-        }
-
-        uptimeLogs.push(logEntry);
-    }
-
-    return uptimeLogs;
-};
-
-
-const GetSummary = async (attribute, type) => {
-    const lengthAttribute = attribute.length;
-    if (lengthAttribute === 0) return { avgping: 0, avgcpu: 0, avgram: 0, avgdisk: 0 };
-
-    let avgping = 0, avgcpu = 0, avgdisk = 0, avgram = 0;
-    let totalCPU = 0, totalDisk = 0, totalRAM = 0;
-    let countCPU = 0, countDisk = 0, countRAM = 0;
-
-    for (let i = 0; i < lengthAttribute - 1; i++) {
-        avgping += attribute[i]?.responseTime ?? 0;
-        
-        if(type === "server"){
-            // Handle CPU Usage
-            let tempCPU = attribute[i]?.cpuUsage;
-            if (tempCPU && tempCPU !== "N/A") {  // Pastikan tempCPU tidak undefined
-                tempCPU = parseFloat(tempCPU.replace('%', '')) || 0;
-                totalCPU += tempCPU;
-                countCPU++;
-            }
-    
-            // Handle Disk Usage
-            let tempDisk = attribute[i]?.diskUsage;
-            if (tempDisk && tempDisk !== "N/A") {  // Pastikan tempDisk tidak undefined
-                tempDisk = parseFloat(tempDisk.replace('%', '')) || 0;
-                totalDisk += tempDisk;
-                countDisk++;
-            }
-    
-            // Handle RAM Usage
-            let tempRAM = attribute[i]?.ramUsage;
-            if (tempRAM && tempRAM !== "N/A") {  // Pastikan tempRAM tidak undefined
-                tempRAM = parseFloat(tempRAM.replace('%', '')) || 0;
-                totalRAM += tempRAM;
-                countRAM++;
-            }
-        }
-    }
-
-    // Hitung rata-rata, pastikan tidak membagi dengan nol
-    avgping = lengthAttribute > 1 ? avgping / (lengthAttribute - 1) : 0;
-    if (type === "server"){
-        avgcpu = countCPU > 0 ? totalCPU / countCPU : 0;
-        avgdisk = countDisk > 0 ? totalDisk / countDisk : 0;
-        avgram = countRAM > 0 ? totalRAM / countRAM : 0;
-
-        const summary = {
-            avgping: avgping.toFixed(2),
-            avgcpu: avgcpu.toFixed(2),
-            avgram: avgram.toFixed(2),
-            avgdisk: avgdisk.toFixed(2),
-        }
-        return summary;
-    }
-
-    const summary = {
-        avgping: avgping.toFixed(2),
-    };
-
-    console.log(summary);
-    return summary;
-};
-
-
-
-export const GetAllMonitorWithLogs = async (req, res) => {    
+export const GetAllMonitorWithLogs = async (req, res) => {
     try {
-        let monitorFinal = null;
-        
-        let monitorHTTPs = await MonitorHTTPs.findAll({ order: [['createdAt', 'ASC']]});
-        monitorHTTPs = monitorHTTPs.map(monitor => ({
-            ...monitor.toJSON(),
-            uuidMonitors: monitor.uuidHTTPs,
-            type: "https"
-        }));
-        
-        let monitorServers = await MonitorServers.findAll({});
-        monitorServers = monitorServers.map(monitor => ({
-            ...monitor.toJSON(),
-            uuidMonitors: monitor.uuidServers,
-            type: "server"
-        }));
-        
-        let monitorNetworks = await MonitorNetworks.findAll({});
-        monitorNetworks = monitorNetworks.map(monitor => ({
-            ...monitor.toJSON(),
-            uuidMonitors: monitor.uuidNets,
-            type: "network"
-        }));
+        const monitorTypes = [
+            {
+                model: MonitorHTTPs,
+                uuidKey: 'uuidHTTPs',
+                type: 'https',
+                logModel: LogsHTTPs
+            },
+            {
+                model: MonitorServers,
+                uuidKey: 'uuidServers',
+                type: 'server',
+                logModel: LogsServers
+            },
+            {
+                model: MonitorPorts,
+                uuidKey: 'uuidPorts',
+                type: 'ports',
+                logModel: LogsPorts
+            }
+        ];
 
-        let monitorPorts = await MonitorPorts.findAll({});
-        monitorPorts = monitorPorts.map(monitor => ({
-            ...monitor.toJSON(),
-            uuidMonitors: monitor.uuidPorts,
-            type: "ports"
-        }));
-        
-        monitorFinal = [...monitorHTTPs, ...monitorServers, ...monitorNetworks, ...monitorPorts];
-        for(const monitor of monitorFinal){
-            const type = monitor.type
-            if (type === "https"){
-                let uptimeData = await LogsHTTPs.findAll({ 
-                    where: { uuidHTTPs: monitor.uuidHTTPs },
-                    order: [['createdAt', 'ASC']],
+        const monitorFinal = [];
+
+        for (const { model, uuidKey, type, logModel } of monitorTypes) {
+            const monitors = await model.findAll({ order: [['createdAt', 'ASC']] });
+
+            for (const monitor of monitors) {
+                const jsonMonitor = monitor.toJSON();
+                const uuid = jsonMonitor[uuidKey];
+
+                const logs = await logModel.findAll({
+                    where: { [uuidKey]: uuid },
+                    order: [['createdAt', 'ASC']]
                 });
 
-                monitor.logs = await GetLogs(uptimeData, type);
-                monitor.summary = await GetSummary(uptimeData, type);
-            }
-            else if (type === "server"){
-                let uptimeData = await LogsServers.findAll({ 
-                    where: { uuidServers: monitor.uuidServers },
-                    order: [['createdAt', 'ASC']],
+                monitorFinal.push({
+                    ...jsonMonitor,
+                    uuidMonitors: uuid,
+                    type,
+                    logs: await ArrayUptimeLogs(logs, type),
+                    summary: await ArraySummaryLogs(logs, type)
                 });
-                monitor.logs = await GetLogs(uptimeData, type);
-                monitor.summary = await GetSummary(uptimeData, type);
-            }
-            else if (type === "ports"){
-                let uptimeData = await LogsPorts.findAll({ 
-                    where: { uuidPorts: monitor.uuidPorts },
-                    order: [['createdAt', 'ASC']],
-                });
-                monitor.logs = await GetLogs(uptimeData, type);
-                monitor.summary = await GetSummary(uptimeData, type);
-            }
-            else if (type === "network"){
-                let uptimeData = await LogsNetworks.findAll({ 
-                    where: { uuidNets: monitor.uuidNets },
-                    order: [['createdAt', 'ASC']],
-                });
-                monitor.logs = await GetLogs(uptimeData, type);
-                monitor.summary = await GetSummary(uptimeData, type);
             }
         }
 
         res.status(200).json(monitorFinal);
     } catch (error) {
-        console.log(error);
-        res.status(502).json({ msg: error.msg })
+        console.error(`[${new Date().toLocaleString()}] - ${error.message}`);
+        res.status(502).json({ msg: error.message });
     }
-}
+};
+
+export const Calculate24HourSummary = async (req, res) => {
+    const { uuidMonitors, type } = req.body;
+    let data = [];
+    
+    try {
+        let model = null;
+        let whereClause = {};
+        let attributes = ["createdAt", "responseTime"]; // Default attributes
+
+        if (type === "https") {
+            model = LogsHTTPs;
+            whereClause = { uuidHTTPs: uuidMonitors };
+        } else if (type === "server") {
+            model = LogsServers;
+            whereClause = { uuidServers: uuidMonitors };
+            attributes = [...attributes, "cpuUsage", "ramUsage", "diskUsage"]; // Tambahkan kolom tambahan
+        } else if (type === "ports") {
+            model = LogsPorts;
+            whereClause = { uuidPorts: uuidMonitors };
+        } 
+
+        if (!model) {
+            return res.status(400).json({ msg: "Invalid type" });
+        }
+
+        // Ambil semua data dalam hari yang sama
+        const logs = await model.findAll({
+            where: whereClause,
+            attributes: attributes,
+        });
+
+        // Rentang waktu 2 jam
+        const timeRanges = [
+            "00:00", "02:00", "04:00", "06:00", "08:00", "10:00",
+            "12:00", "14:00", "16:00", "18:00", "20:00", "22:00"
+        ];
+        
+        let result = timeRanges.map((startTime, index) => {
+            let startHour = parseInt(startTime.split(":")[0]); // Ambil jam sebagai integer
+            let endHour = startHour + 2; // Rentang waktu 2 jam
+
+            // Filter logs yang masuk dalam rentang waktu ini
+            let filteredLogs = logs.filter(log => {
+                let logHour = new Date(log.createdAt).getHours();
+                return logHour >= startHour && logHour < endHour;
+            });
+
+            // Hitung rata-rata responseTime
+            let validPingLogs = filteredLogs.filter(log => log.responseTime !== "N/A");
+            let avgPing = validPingLogs.length
+                ? (validPingLogs.reduce((sum, log) => sum + parseFloat(log.responseTime), 0) / validPingLogs.length).toFixed(2) + "ms"
+                : "0ms";
+
+            if (type === "server") {
+                // Hitung rata-rata untuk cpuUsage, ramUsage, diskUsage (tanpa "N/A")
+                let validCpuLogs = filteredLogs.filter(log => log.cpuUsage !== "N/A");
+                let validRamLogs = filteredLogs.filter(log => log.ramUsage !== "N/A");
+                let validDiskLogs = filteredLogs.filter(log => log.diskUsage !== "N/A");
+
+                let avgCpu = validCpuLogs.length
+                    ? (validCpuLogs.reduce((sum, log) => sum + parseFloat(log.cpuUsage), 0) / validCpuLogs.length).toFixed(2) + "%"
+                    : "0%";
+
+                let avgRam = validRamLogs.length
+                    ? (validRamLogs.reduce((sum, log) => sum + parseFloat(log.ramUsage), 0) / validRamLogs.length).toFixed(2) + "%"
+                    : "0%";
+
+                let avgDisk = validDiskLogs.length
+                    ? (validDiskLogs.reduce((sum, log) => sum + parseFloat(log.diskUsage), 0) / validDiskLogs.length).toFixed(2) + "%"
+                    : "0%";
+
+                return { AvgPing: avgPing, AvgCpu: avgCpu, AvgRam: avgRam, AvgDisk: avgDisk };
+            }
+
+            return { AvgPing: avgPing };
+        });
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ msg: error.message });
+    }
+};
+
+export const GetMonitorStatusCount = async (req, res) => {
+    try {
+        const monitorTypes = [
+            {
+                monitorModel: MonitorHTTPs,
+                logModel: LogsHTTPs,
+                uuidField: 'uuidHTTPs'
+            },
+            {
+                monitorModel: MonitorServers,
+                logModel: LogsServers,
+                uuidField: 'uuidServers'
+            },
+            {
+                monitorModel: MonitorPorts,
+                logModel: LogsPorts,
+                uuidField: 'uuidPorts'
+            }
+        ];
+
+        const statusCount = {
+            UP: 0,
+            DOWN: 0,
+            PAUSED: 0
+        };
+
+        // Iterate over each monitor type
+        for (const { monitorModel, logModel, uuidField } of monitorTypes) {
+            const monitors = await monitorModel.findAll();
+
+            for (const monitor of monitors) {
+                // If the monitor is paused (i.e. running state is not "STARTED"), count as paused.
+                if (monitor.running !== "STARTED") {
+                    statusCount.PAUSED++;
+                } else {
+                    // Otherwise, fetch the latest log for this monitor by UUID.
+                    const latestLog = await logModel.findOne({
+                        where: { [uuidField]: monitor[uuidField] },
+                        order: [['createdAt', 'DESC']]
+                    });
+
+                    // If a log entry exists, increment the corresponding counter based on its status.
+                    if (latestLog) {
+                        const logStatus = latestLog.status;
+                        console.log(logStatus);
+                        
+                        if (logStatus && (logStatus === 'UP' || logStatus === 'DOWN')) {
+                            statusCount[logStatus]++;
+                        }
+                    }
+                }
+            }
+        }
+
+        const result = [
+            { status: 'UP', total: statusCount.UP },
+            { status: 'DOWN', total: statusCount.DOWN },
+            { status: 'PAUSED', total: statusCount.PAUSED }
+        ];
+
+        res.status(200).json(result);
+    } catch (error) {
+        console.error(`[${new Date().toLocaleString()}] - ${error.message}`);
+        res.status(502).json({ msg: error.message });
+    }
+};
+
+
+export const DeleteMonitor = async (req, res) => {
+    const { uuid, type } = req.body;
+    let model = null;
+    let where = {};
+    let nameField = "hostname"; // default field nama monitor (ubah sesuai model)
+
+    try {
+        if (type === "https" || type === "http") {
+            model = MonitorHTTPs;
+            where = { uuidHTTPs: uuid };
+        } else if (type === "ports") {
+            model = MonitorPorts;
+            where = { uuidPorts: uuid };
+        } else if (type === "server") {
+            model = MonitorServers;
+            where = { uuidServers: uuid };
+        } else {
+            return res.status(400).json({ msg: "Invalid monitor type." });
+        }
+
+        const monitor = await model.findOne({ where });
+
+        if (!monitor) {
+            return res.status(404).json({ msg: "Monitor not found." });
+        }
+
+        const monitorName = monitor[nameField] || monitor.hostname || monitor.name || "Unnamed";
+
+        await monitor.destroy();
+
+        res.status(200).json({
+            message: `Monitor '${monitorName}' berhasil dihapus.`,
+            uuid,
+            type,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: "Failed to delete monitor." });
+    }
+};
+
+export const PauseMonitor = async (req, res) => {
+    const { uuid, type } = req.body;
+    let model = null;
+    let where = {};
+
+    try {
+        if (type === "http" || type === "https") {
+            model = MonitorHTTPs;
+            where = { uuidHTTPs: uuid };
+        } else if (type === "ports") {
+            model = MonitorPorts;
+            where = { uuidPorts: uuid };
+        } else if (type === "server") {
+            model = MonitorServers;
+            where = { uuidServers: uuid };
+        } else {
+            return res.status(400).json({ msg: "Tipe monitor tidak valid." });
+        }
+
+        const monitor = await model.findOne({ where });
+
+        if (!monitor) {
+            return res.status(404).json({ msg: "Monitor tidak ditemukan." });
+        }
+
+        if ( monitor.running === "PAUSED" ){
+            return res.status(400).json({ msg: "Monitor telah dijeda sebelumnya."})
+        }
+        monitor.running = "PAUSED";
+        await monitor.save();
+
+        res.status(200).json({
+            msg: `Monitor '${monitor.hostname || monitor.name || "unknown"}' berhasil di-pause.`,
+        });
+
+    } catch (error) {
+        console.error(`[${new Date().toLocaleString()}] - PauseMonitor Error:`, error.message);
+        res.status(500).json({ msg: "Gagal pause monitor." });
+    }
+};
+
+export const StartMonitor = async (req, res) => {
+    const { uuid, type } = req.body;
+    let model = null;
+    let where = {};
+
+    try {
+        if (type === "http" || type === "https") {
+            model = MonitorHTTPs;
+            where = { uuidHTTPs: uuid };
+        } else if (type === "ports") {
+            model = MonitorPorts;
+            where = { uuidPorts: uuid };
+        } else if (type === "server") {
+            model = MonitorServers;
+            where = { uuidServers: uuid };
+        } else {
+            return res.status(400).json({ msg: "Tipe monitor tidak valid." });
+        }
+
+        const monitor = await model.findOne({ where });
+
+        if (!monitor) {
+            return res.status(404).json({ msg: "Monitor tidak ditemukan." });
+        }
+
+        if ( monitor.running === "STARTED" ){
+            return res.status(400).json({ msg: "Monitor telah dimulai sebelumnya." })
+        }
+        monitor.running = "STARTED";
+        await monitor.save();
+
+        res.status(200).json({
+            msg: `Monitor '${monitor.hostname || monitor.name || "unknown"}' berhasil di-mulai kembali.`,
+        });
+
+    } catch (error) {
+        console.error(`[${new Date().toLocaleString()}] - StartMonitor - Error:`, error.message);
+        res.status(500).json({ msg: "Gagal memulai kembali monitor." });
+    }
+};
+
+export const TestAlertEmail = async (req, res) => {
+    const { uuidUsers, uuidMonitors, type } = req.body;
+    let monitor = null;
+
+    try {
+        const user = await Users.findOne({ where: { uuidUsers: uuidUsers }});
+        
+        if ( type === "server" ) {
+            monitor = await MonitorServers.findOne({
+                where: { uuidServers: uuidMonitors },
+            });
+        } else if ( type === "https" ) {
+            monitor = await MonitorHTTPs.findOne({
+                where: { uuidHTTPs: uuidMonitors }
+            })
+        } else if (type === "ports" ){
+            monitor = await MonitorPorts.findOne({
+                where: { uuidPorts: uuidMonitors }
+            });
+        } else {
+            res.status(404).json({ msg: "Monitor not Found!" });
+        }
+        
+        const subject = `Monitor ${monitor.hostname} DOWN!`;
+        
+        const info = {
+            name: user.name,
+            hostname: monitor.hostname,
+            ipaddress: monitor.ipaddress,
+            rootcause: "Connection Timeout",
+            date: getFormattedCurrentTime(),
+        };
+
+        const mailsend = await SendEmail(user.email, subject, emailTemplate(info));
+        console.log(mailsend);
+        
+        res.status(200).json({ msg: "Email Successfully Send!" });
+    } catch (error) {
+        res.status(500).json({ msg: error.message });
+    }
+};
+
+export const CalculateGlobalSLA = async (req, res) => {
+    try {
+        const monitorTypes = [
+            {
+                monitorModel: MonitorHTTPs,
+                logModel: LogsHTTPs,
+                incidentModel: IncidentsHTTPs,
+                uuidField: 'uuidHTTPs'
+            },
+            {
+                monitorModel: MonitorServers,
+                logModel: LogsServers,
+                incidentModel: IncidentsServers,
+                uuidField: 'uuidServers'
+            },
+            {
+                monitorModel: MonitorPorts,
+                logModel: LogsPorts,
+                incidentModel: IncidentsPorts,
+                uuidField: 'uuidPorts'
+            }
+        ];
+        
+        let globalUptime = 0;
+        let globalDowntime = 0;
+        let globalIncidents = 0;
+        
+        for (const typeObj of monitorTypes) {
+            const { monitorModel, logModel, incidentModel, uuidField } = typeObj;
+            
+            const monitors = await monitorModel.findAll({
+                order: [['createdAt', 'ASC']]
+            });
+            
+            for (const monitor of monitors) {
+                const uuidValue = monitor[uuidField];
+                
+                const logs = await logModel.findAll({
+                    where: { [uuidField]: uuidValue },
+                    order: [['createdAt', 'ASC']]
+                });
+                const incidents = await incidentModel.findAll({
+                    where: { [uuidField]: uuidValue },
+                    order: [['createdAt', 'ASC']]
+                });
+                
+                let totalUptime = 0;
+                let currentBlockUptime = 0;
+                
+                logs.forEach((log, index) => {
+                    if (log.uptime === "N/A") {
+                        totalUptime += currentBlockUptime;
+                        currentBlockUptime = 0;
+                    } else {
+                        currentBlockUptime = parseDuration(log.uptime);
+                    }
+                });
+                totalUptime += currentBlockUptime;
+                
+                let totalDowntime = 0;
+                incidents.forEach(incident => {
+                    globalIncidents += 1
+                    totalDowntime += parseDuration(incident.duration);
+                });
+                
+                globalUptime += totalUptime;
+                globalDowntime += totalDowntime;
+            }
+        }
+        
+        const globalPeriod = globalUptime + globalDowntime;
+        const globalSLA = globalPeriod ? (globalUptime / globalPeriod) * 100 : 0;
+        
+        res.status(200).json({
+            globalUptime,    
+            globalDowntime,  
+            globalPeriod,    
+            globalSLA,
+            globalIncidents   
+        });
+    } catch (error) {
+        res.status(500).json({ msg: error.message });
+    }
+};
+
+export const CalculateGlobalSLA24h = async (req, res) => {
+    try {
+        const monitorTypes = [
+            {
+                monitorModel: MonitorHTTPs,
+                logModel: LogsHTTPs,
+                incidentModel: IncidentsHTTPs,
+                uuidField: 'uuidHTTPs'
+            },
+            {
+                monitorModel: MonitorServers,
+                logModel: LogsServers,
+                incidentModel: IncidentsServers,
+                uuidField: 'uuidServers'
+            },
+            {
+                monitorModel: MonitorPorts,
+                logModel: LogsPorts,
+                incidentModel: IncidentsPorts,
+                uuidField: 'uuidPorts'
+            }
+        ];
+
+        const date24 = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+        let globalUptime = 0;
+        let globalDowntime = 0;
+        let globalIncidents = 0;
+
+        for (const typeObj of monitorTypes) {
+            const { monitorModel, logModel, incidentModel, uuidField } = typeObj;
+
+            const monitors = await monitorModel.findAll({
+                order: [['createdAt', 'ASC']]
+            });
+
+            for (const monitor of monitors) {
+                const uuidValue = monitor[uuidField];
+
+                const logs = await logModel.findAll({
+                    where: {
+                        [uuidField]: uuidValue,
+                        createdAt: { [Op.gte]: date24 }
+                    },
+                    order: [['createdAt', 'ASC']]
+                });
+
+                const incidents = await incidentModel.findAll({
+                    where: {
+                        [uuidField]: uuidValue,
+                        createdAt: { [Op.gte]: date24 }
+                    },
+                    order: [['createdAt', 'ASC']]
+                });
+
+                let totalUptime = 0;
+                let currentBlockUptime = 0;
+
+                logs.forEach(log => {
+                    if (log.uptime === "N/A") {
+                        totalUptime += currentBlockUptime;
+                        currentBlockUptime = 0;
+                    } else {
+                        currentBlockUptime = parseDuration(log.uptime);
+                    }
+                });
+                totalUptime += currentBlockUptime;
+
+                let totalDowntime = 0;
+                incidents.forEach(incident => {
+                    globalIncidents += 1;
+                    totalDowntime += parseDuration(incident.duration);
+                });
+
+                globalUptime += totalUptime;
+                globalDowntime += totalDowntime;
+            }
+        }
+
+        const globalPeriod = globalUptime + globalDowntime;
+        const globalSLA = globalPeriod ? (globalUptime / globalPeriod) * 100 : 0;
+
+        res.status(200).json({
+            globalSLA,
+            globalIncidents
+        });
+    } catch (error) {
+        res.status(500).json({ msg: error.message });
+    }
+};
+
+export const CalculateWeeklySLA = async (req, res) => {
+    try {
+        const monitorTypes = [
+            {
+                monitorModel: MonitorHTTPs,
+                logModel: LogsHTTPs,
+                incidentModel: IncidentsHTTPs,
+                uuidField: 'uuidHTTPs'
+            },
+            {
+                monitorModel: MonitorServers,
+                logModel: LogsServers,
+                incidentModel: IncidentsServers,
+                uuidField: 'uuidServers'
+            },
+            {
+                monitorModel: MonitorPorts,
+                logModel: LogsPorts,
+                incidentModel: IncidentsPorts,
+                uuidField: 'uuidPorts'
+            }
+        ];
+
+        const results = [];
+
+        // Loop from 6 days ago down to today (offset 0)
+        for (let offset = 6; offset >= 0; offset--) {
+            const dayDate = new Date();
+            dayDate.setHours(0, 0, 0, 0);
+            dayDate.setDate(dayDate.getDate() - offset);
+
+            const dayStart = new Date(dayDate);
+            const dayEnd = new Date(dayDate);
+            dayEnd.setHours(23, 59, 59, 999);
+
+            let dayUptime = 0;
+            let dayDowntime = 0;
+
+            for (const { monitorModel, logModel, incidentModel, uuidField } of monitorTypes) {
+                const monitors = await monitorModel.findAll();
+
+                for (const monitor of monitors) {
+                    const uuidValue = monitor[uuidField];
+
+                    const logs = await logModel.findAll({
+                        where: {
+                            [uuidField]: uuidValue,
+                            createdAt: { [Op.between]: [dayStart, dayEnd] }
+                        },
+                        order: [['createdAt', 'ASC']]
+                    });
+
+                    let totalUptime = 0;
+                    let currentBlockUptime = 0;
+
+                    logs.forEach(log => {
+                        if (log.uptime === "N/A") {
+                            totalUptime += currentBlockUptime;
+                            currentBlockUptime = 0;
+                        } else {
+                            currentBlockUptime = parseDuration(log.uptime);
+                        }
+                    });
+                    totalUptime += currentBlockUptime;
+
+                    const incidents = await incidentModel.findAll({
+                        where: {
+                            [uuidField]: uuidValue,
+                            createdAt: { [Op.between]: [dayStart, dayEnd] }
+                        },
+                        order: [['createdAt', 'ASC']]
+                    });
+
+                    let totalDowntime = 0;
+                    incidents.forEach(incident => {
+                        totalDowntime += parseDuration(incident.duration);
+                    });
+
+                    dayUptime += totalUptime;
+                    dayDowntime += totalDowntime;
+                }
+            }
+
+            const dayPeriod = dayUptime + dayDowntime;
+            const uptimePercent = dayPeriod ? (dayUptime / dayPeriod) * 100 : 0;
+            const downtimePercent = dayPeriod ? (dayDowntime / dayPeriod) * 100 : 0;
+
+            // For today, use "Today" as the day key; otherwise, use the weekday name.
+            const dayKey =
+                offset === 0
+                    ? "today"
+                    : dayStart.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+
+            results.push({
+                day: dayKey,
+                uptimePercent,
+                downtimePercent
+            });
+        }
+
+        res.status(200).json(results);
+    } catch (error) {
+        res.status(500).json({ msg: error.message });
+    }
+};
+
+

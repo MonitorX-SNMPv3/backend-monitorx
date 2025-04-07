@@ -22,8 +22,10 @@ export const createMonitorHTTPs = async (req, res) => {
             hostname: hostname, 
             ipaddress: ipaddress,
             statusCheck: statusCheck,
+            running: "STARTED",
         });
         
+        console.log(`[${new Date().toLocaleString()}] - Server ${hostname} berhasil ditambahkan ke DB`);
         res.status(201).json({ msg: "Data HTTP/HTTPS Berhasil ditambahkan"})
 
     } catch (error) {

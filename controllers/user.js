@@ -27,3 +27,34 @@ export const createUsers = async (req, res) => {
     }
 };
 
+export const getAllUsers = async (req, res) => {
+    try {
+        const user = await Users.findAll({
+            order: [['name', 'ASC']],
+            attributes: { exclude: ['password'] }
+        });
+
+        res.status(200).json(user);
+    } catch (error) {
+        res.status(502).json({ msg: error.message });
+    }
+}
+
+export const deleteUser = async (req, res) => {
+    try {
+        const { uuid } = req.body;
+        console.log(uuid);
+        
+        const user = await Users.findOne({ where: { uuidUsers: uuid } });
+
+        if (!user) {
+            return res.status(404).json({ msg: "User not found." });
+        }
+
+        await user.destroy();
+        
+        res.status(200).json({ msg: "User deleted successfully." });
+    } catch (error) {
+        res.status(502).json({ msg: error.message });
+    }
+};

@@ -41,8 +41,9 @@ const IncidentsServers = db.define('incidents_servers', {
         }
     },
     resolved: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: true,
+        defaultValue: "-",
     },
     duration: {
         type: DataTypes.STRING,
