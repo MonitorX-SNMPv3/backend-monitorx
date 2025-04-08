@@ -1,7 +1,7 @@
 import MonitorHTTPs from "../models/monitorHTTP.js";
-import MonitorServers from "../models/monitorServer.js";
+import MonitorDevices from "../models/monitorDevices.js";
 import { ServiceHTTPs } from "../services/httpServices.js";
-import { ServiceServers } from "../services/serverServices.js";
+import { ServiceDevices } from "../services/devicesServices.js";
 
 export const StartBackgroundLogs = async () => {
     const intervalMapping = {
@@ -18,14 +18,14 @@ export const StartBackgroundLogs = async () => {
     const startMonitoring = (interval, statusCheck) => {
         setInterval(async () => {
             const monitorHTTPs = await MonitorHTTPs.findAll({ where: { statusCheck } });
-            const monitorServers = await MonitorServers.findAll({ where: { statusCheck } });
+            const monitorDevices = await MonitorDevices.findAll({ where: { statusCheck } });
 
             for (const monitor of monitorHTTPs) {
                 await ServiceHTTPs(monitor);
             }
             
-            for (const monitor of monitorServers) {
-                await ServiceServers(monitor);
+            for (const monitor of monitorDevices) {
+                await ServiceDevices(monitor);
             }
         }, interval);
     };

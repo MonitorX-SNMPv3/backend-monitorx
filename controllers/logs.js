@@ -1,10 +1,10 @@
 import IncidentsHTTPs from "../models/incidentsHTTP.js";
 import LogsHTTPs from "../models/logsHTTP.js";
 import LogsPorts from "../models/logsPort.js";
-import LogsServers from "../models/logsServer.js";
+import LogsDevices from "../models/logsDevices.js";
 import MonitorHTTPs from "../models/monitorHTTP.js";
 import MonitorPorts from "../models/monitorPorts.js";
-import MonitorServers from "../models/monitorServer.js";
+import MonitorDevices from "../models/monitorDevices.js";
 
 export const ClearLogs = async (req, res) => {
     const { uuid, type } = req.body;
@@ -19,9 +19,9 @@ export const ClearLogs = async (req, res) => {
         } else if (type === "ports") {
             LogModel = LogsPorts; // Assumed log model for port monitors
             where = { uuidPorts: uuid };
-        } else if (type === "server") {
-            LogModel = LogsServers; // Assumed log model for server monitors
-            where = { uuidServers: uuid };
+        } else if (type === "devices") {
+            LogModel = LogsDevices; // Assumed log model for Devices monitors
+            where = { uuidDevices: uuid };
         } else {
             return res.status(400).json({ msg: "Tipe monitor tidak valid." });
         }
@@ -49,10 +49,10 @@ export const AvgResponseTime = async (req, res) => {
             logModel: LogsHTTPs
         },
         {
-            model: MonitorServers,
-            uuidKey: 'uuidServers',
-            type: 'server',
-            logModel: LogsServers
+            model: MonitorDevices,
+            uuidKey: 'uuidDevices',
+            type: 'devices',
+            logModel: LogsDevices
         },
         {
             model: MonitorPorts,
@@ -72,7 +72,6 @@ export const AvgResponseTime = async (req, res) => {
 
             logs.forEach(log => {
                 const responseTime = log.responseTime;
-                // Skip logs with responseTime less than 5ms (server down)
                 if (responseTime >= 5) {
                     allValidResponseTimes.push(responseTime);
                 }

@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import Users from "../models/userModels.js";
-import ActivityServer from "../models/activityServer.js";
+import ActivityDevices from "../models/activityDevices.js";
 import ActivityHTTPs from "../models/activityHTTP.js";
 import ActivityPort from "../models/activityPort.js";
 import { getFormattedCurrentTime } from "../utils/time.js";
@@ -33,7 +33,7 @@ export const SendEmail = async (to, subject, htmlContent) => {
 
 export const NotifyEmailActivity = async ( attribute, attribute2, type ) => {
     const modelMap = {
-        server: ActivityServer,
+        devices: ActivityDevices,
         https: ActivityHTTPs,
         ports: ActivityPort,
     };

@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
 import db from "../config/database.js";
 
-const MonitorServers = db.define('monitor_servers', {
-    uuidServers: {
+const MonitorDevices = db.define('monitor_devices', {
+    uuidDevices: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         allowNull: false,
@@ -74,4 +74,4 @@ const MonitorServers = db.define('monitor_servers', {
     timestamps: true, // Sequelize akan otomatis menambahkan createdAt & updatedAt
 });
 
-export default MonitorServers;
+export default MonitorDevices;

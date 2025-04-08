@@ -1,10 +1,10 @@
-import ActivityServer from "../models/activityServer.js";
-import IncidentsServers from "../models/incidentsServer.js";
-import MonitorServers from "../models/monitorServer.js";
+import ActivityDevices from "../models/activityDevices.js";
+import IncidentsDevices from "../models/incidentsDevices.js";
+import MonitorDevices from "../models/monitorDevices.js";
 import { calculateDuration, getFormattedCurrentTime } from "../utils/time.js";
 import { NotifyEmailActivity } from "./notifyEmail.js";
 
-export const HandleOngoingIncidentsServer = async ( attribute ) => {
+export const HandleOngoingIncidentsDevices = async ( attribute ) => {
     const durations = {
         "15S": "1m",
         "1M": "1m",
@@ -14,16 +14,16 @@ export const HandleOngoingIncidentsServer = async ( attribute ) => {
     };
 
     try {
-        const incidents = await IncidentsServers.findOne({ where: { status: "Ongoing", uuidServers: attribute.uuidServers }});
+        const incidents = await IncidentsDevices.findOne({ where: { status: "Ongoing", uuidDevices: attribute.uuidDevices }});
         
         if (!incidents) {
-            const server = await MonitorServers.findOne({ where: { uuidServers: attribute.uuidServers }});
-            const duration = durations[server.statusCheck] || undefined;
+            const devices = await MonitorDevices.findOne({ where: { uuidDevices: attribute.uuidDevices }});
+            const duration = durations[devices.statusCheck] || undefined;
             
             console.log(`[${new Date().toLocaleString()}] - Incidents not found! Creating Incidents...`);
             
-            await IncidentsServers.create({
-                uuidServers: attribute.uuidServers,
+            await IncidentsDevices.create({
+                uuidDevices: attribute.uuidDevices,
                 status: "Ongoing",
                 rootcause: "Connection Timeout",
                 started: Date.now(),
@@ -31,14 +31,14 @@ export const HandleOngoingIncidentsServer = async ( attribute ) => {
                 duration: duration,
             });
             
-            const incidents = await IncidentsServers.findOne({ where: { status: "Ongoing", uuidServers: attribute.uuidServers }});
+            const incidents = await IncidentsDevices.findOne({ where: { status: "Ongoing", uuidDevices: attribute.uuidDevices }});
             
-            await ActivityServer.create({
+            await ActivityDevices.create({
                 uuidIncidents: incidents.uuidIncidents,
-                description: "Connection timeout. The server attempted to reach the target 3 times but received no response."
+                description: "Connection timeout. The devices attempted to reach the target 3 times but received no response."
             });
             
-            await NotifyEmailActivity( server, incidents, 'server' );
+            await NotifyEmailActivity( devices, incidents, 'devices' );
             return;
         }
         
@@ -47,16 +47,16 @@ export const HandleOngoingIncidentsServer = async ( attribute ) => {
         incidents.duration = calculatedDuration;
         await incidents.save();
 
-        console.log(`[${new Date().toLocaleString()}] - Updating duration of server incidents ${calculatedDuration}`);
+        console.log(`[${new Date().toLocaleString()}] - Updating duration of devices incidents ${calculatedDuration}`);
         return;
     } catch (error) {
         console.log(`[${new Date().toLocaleString()}] - ${error.message}`);
     }   
 }
 
-export const HandleResolvedIncidentsServer = async ( attribute ) => {
+export const HandleResolvedIncidentsDevices = async ( attribute ) => {
     try {
-        const incidents = await IncidentsServers.findOne({ where: { status: "Ongoing", uuidServers: attribute.uuidServers }});
+        const incidents = await IncidentsDevices.findOne({ where: { status: "Ongoing", uuidDevices: attribute.uuidDevices }});
         
         if (!incidents) { return console.log('Incidents not Found!') };
         
@@ -68,9 +68,9 @@ export const HandleResolvedIncidentsServer = async ( attribute ) => {
 
         await incidents.save();
 
-        await ActivityServer.create({
+        await ActivityDevices.create({
             uuidIncidents: incidents.uuidIncidents,
-            description: "Server Responses UP! Resolving incidents Successfully."
+            description: "Devices Responses UP! Resolving incidents Successfully."
         })
 
         console.log(`[${new Date().toLocaleString()}] - Incidents Resolved! Downtime: ${durationNow}`);

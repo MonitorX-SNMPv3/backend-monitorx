@@ -1,18 +1,17 @@
 import IncidentsHTTPs from "../models/incidentsHTTP.js";
 import IncidentsPorts from "../models/incidentsPort.js";
-import IncidentsServers from "../models/incidentsServer.js";
+import IncidentsDevices from "../models/incidentsDevices.js";
 import LogsHTTPs from "../models/logsHTTP.js";
 import LogsPorts from "../models/logsPort.js";
-import LogsServers from "../models/logsServer.js";
+import LogsDevices from "../models/logsDevices.js";
 import MonitorHTTPs from "../models/monitorHTTP.js";
 import MonitorPorts from "../models/monitorPorts.js";
-import MonitorServers from "../models/monitorServer.js";
+import MonitorDevices from "../models/monitorDevices.js";
 import Users from "../models/userModels.js";
 import { SendEmail } from "../services/notifyEmail.js";
 import { ArraySummaryLogs, ArrayUptimeLogs } from "../utils/logsHelper.js";
 import { emailTemplate } from "../utils/templates/emailTemplate.js";
-import { getFormattedCurrentTime } from "../utils/time.js";
-import { parseDuration } from "../utils/uptimeHelper.js";
+import { getFormattedCurrentTime, parseDuration } from "../utils/time.js";
 import { Op } from "sequelize";
 
 export const GetAllMonitorWithLogs = async (req, res) => {
@@ -25,14 +24,14 @@ export const GetAllMonitorWithLogs = async (req, res) => {
                 logModel: LogsHTTPs
             },
             {
-                model: MonitorServers,
-                uuidKey: 'uuidServers',
-                type: 'server',
-                logModel: LogsServers
+                model: MonitorDevices,
+                uuidKey: 'uuidDevices',
+                type: 'devices',
+                logModel: LogsDevices
             },
             {
                 model: MonitorPorts,
-                uuidKey: 'uuidPorts',
+                uuidKey: 'uuidPorts', 
                 type: 'ports',
                 logModel: LogsPorts
             }
@@ -81,9 +80,9 @@ export const Calculate24HourSummary = async (req, res) => {
         if (type === "https") {
             model = LogsHTTPs;
             whereClause = { uuidHTTPs: uuidMonitors };
-        } else if (type === "server") {
-            model = LogsServers;
-            whereClause = { uuidServers: uuidMonitors };
+        } else if (type === "devices") {
+            model = LogsDevices;
+            whereClause = { uuidDevices: uuidMonitors };
             attributes = [...attributes, "cpuUsage", "ramUsage", "diskUsage"]; // Tambahkan kolom tambahan
         } else if (type === "ports") {
             model = LogsPorts;
@@ -122,7 +121,7 @@ export const Calculate24HourSummary = async (req, res) => {
                 ? (validPingLogs.reduce((sum, log) => sum + parseFloat(log.responseTime), 0) / validPingLogs.length).toFixed(2) + "ms"
                 : "0ms";
 
-            if (type === "server") {
+            if (type === "devices") {
                 // Hitung rata-rata untuk cpuUsage, ramUsage, diskUsage (tanpa "N/A")
                 let validCpuLogs = filteredLogs.filter(log => log.cpuUsage !== "N/A");
                 let validRamLogs = filteredLogs.filter(log => log.ramUsage !== "N/A");
@@ -161,9 +160,9 @@ export const GetMonitorStatusCount = async (req, res) => {
                 uuidField: 'uuidHTTPs'
             },
             {
-                monitorModel: MonitorServers,
-                logModel: LogsServers,
-                uuidField: 'uuidServers'
+                monitorModel: MonitorDevices,
+                logModel: LogsDevices,
+                uuidField: 'uuidDevices'
             },
             {
                 monitorModel: MonitorPorts,
@@ -196,7 +195,6 @@ export const GetMonitorStatusCount = async (req, res) => {
                     // If a log entry exists, increment the corresponding counter based on its status.
                     if (latestLog) {
                         const logStatus = latestLog.status;
-                        console.log(logStatus);
                         
                         if (logStatus && (logStatus === 'UP' || logStatus === 'DOWN')) {
                             statusCount[logStatus]++;
@@ -233,9 +231,9 @@ export const DeleteMonitor = async (req, res) => {
         } else if (type === "ports") {
             model = MonitorPorts;
             where = { uuidPorts: uuid };
-        } else if (type === "server") {
-            model = MonitorServers;
-            where = { uuidServers: uuid };
+        } else if (type === "devices") {
+            model = MonitorDevices;
+            where = { uuidDevices: uuid };
         } else {
             return res.status(400).json({ msg: "Invalid monitor type." });
         }
@@ -273,9 +271,9 @@ export const PauseMonitor = async (req, res) => {
         } else if (type === "ports") {
             model = MonitorPorts;
             where = { uuidPorts: uuid };
-        } else if (type === "server") {
-            model = MonitorServers;
-            where = { uuidServers: uuid };
+        } else if (type === "devices") {
+            model = MonitorDevices;
+            where = { uuidDevices: uuid };
         } else {
             return res.status(400).json({ msg: "Tipe monitor tidak valid." });
         }
@@ -314,9 +312,9 @@ export const StartMonitor = async (req, res) => {
         } else if (type === "ports") {
             model = MonitorPorts;
             where = { uuidPorts: uuid };
-        } else if (type === "server") {
-            model = MonitorServers;
-            where = { uuidServers: uuid };
+        } else if (type === "devices") {
+            model = MonitorDevices;
+            where = { uuidDevices: uuid };
         } else {
             return res.status(400).json({ msg: "Tipe monitor tidak valid." });
         }
@@ -350,9 +348,9 @@ export const TestAlertEmail = async (req, res) => {
     try {
         const user = await Users.findOne({ where: { uuidUsers: uuidUsers }});
         
-        if ( type === "server" ) {
-            monitor = await MonitorServers.findOne({
-                where: { uuidServers: uuidMonitors },
+        if ( type === "devices" ) {
+            monitor = await MonitorDevices.findOne({
+                where: { uuidDevices: uuidMonitors },
             });
         } else if ( type === "https" ) {
             monitor = await MonitorHTTPs.findOne({
@@ -381,6 +379,8 @@ export const TestAlertEmail = async (req, res) => {
         
         res.status(200).json({ msg: "Email Successfully Send!" });
     } catch (error) {
+        console.log(error.message);
+        
         res.status(500).json({ msg: error.message });
     }
 };
@@ -395,10 +395,10 @@ export const CalculateGlobalSLA = async (req, res) => {
                 uuidField: 'uuidHTTPs'
             },
             {
-                monitorModel: MonitorServers,
-                logModel: LogsServers,
-                incidentModel: IncidentsServers,
-                uuidField: 'uuidServers'
+                monitorModel: MonitorDevices,
+                logModel: LogsDevices,
+                incidentModel: IncidentsDevices,
+                uuidField: 'uuidDevices'
             },
             {
                 monitorModel: MonitorPorts,
@@ -480,10 +480,10 @@ export const CalculateGlobalSLA24h = async (req, res) => {
                 uuidField: 'uuidHTTPs'
             },
             {
-                monitorModel: MonitorServers,
-                logModel: LogsServers,
-                incidentModel: IncidentsServers,
-                uuidField: 'uuidServers'
+                monitorModel: MonitorDevices,
+                logModel: LogsDevices,
+                incidentModel: IncidentsDevices,
+                uuidField: 'uuidDevices'
             },
             {
                 monitorModel: MonitorPorts,
@@ -571,10 +571,10 @@ export const CalculateWeeklySLA = async (req, res) => {
                 uuidField: 'uuidHTTPs'
             },
             {
-                monitorModel: MonitorServers,
-                logModel: LogsServers,
-                incidentModel: IncidentsServers,
-                uuidField: 'uuidServers'
+                monitorModel: MonitorDevices,
+                logModel: LogsDevices,
+                incidentModel: IncidentsDevices,
+                uuidField: 'uuidDevices'
             },
             {
                 monitorModel: MonitorPorts,

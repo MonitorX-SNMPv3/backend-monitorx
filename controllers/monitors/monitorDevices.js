@@ -1,12 +1,12 @@
 import PdfPrinter from "pdfmake";
-import LogsServers from "../../models/logsServer.js";
-import MonitorServers from "../../models/monitorServer.js";
+import LogsDevices from "../../models/logsDevices.js";
+import MonitorDevices from "../../models/monitorDevices.js";
 import Users from "../../models/userModels.js";
 import { ArrayUptimeLogs } from "../../utils/logsHelper.js";
-import { ServerPDFTemplates } from "../../utils/templates/monitorSummary.js";
+import { DevicesPDFTemplates } from "../../utils/templates/monitorSummary.js";
 import { fonts } from "../../utils/templates/fonts.js";
 
-export const createMonitorServers = async (req, res) => {
+export const createMonitorDevices = async (req, res) => {
     const { uuidUsers, hostname, ipaddress, 
         snmp_username, snmp_authkey, snmp_privkey, snmp_port, statusCheck } = req.body;
 
@@ -19,7 +19,7 @@ export const createMonitorServers = async (req, res) => {
         const users = Users.findOne({ where: {uuidUsers: uuidUsers } });
         if (!users) return res.status(404).json({ msg: "ID User tidak ditemukan" });
         
-        await MonitorServers.create({ 
+        await MonitorDevices.create({ 
             uuidUsers: uuidUsers, 
             hostname: hostname, 
             ipaddress: ipaddress, 
@@ -32,15 +32,15 @@ export const createMonitorServers = async (req, res) => {
         });
 
         console.log(`[${new Date().toLocaleString()}] - Monitor ${hostname} berhasil ditambahkan`);
-        res.status(201).json({ msg: "Data Server Berhasil ditambahkan"})
+        res.status(201).json({ msg: "Data Device Berhasil ditambahkan"})
     } catch (error) {
         res.status(400).json({ msg: error.message })
     }
 };
 
-export const updateMonitorServer = async (req, res) => {
+export const UpdateMonitorDevices = async (req, res) => {
     const {
-        uuidServers,
+        uuidDevices,
         hostname,
         ipaddress,
         snmp_username,
@@ -52,12 +52,12 @@ export const updateMonitorServer = async (req, res) => {
     } = req.body;
 
     try {
-        const monitor = await MonitorServers.findOne({
-            where: { uuidServers },
+        const monitor = await MonitorDevices.findOne({
+            where: { uuidDevices },
         });
 
         if (!monitor) {
-            return res.status(404).json({ msg: 'Monitor server tidak ditemukan.' });
+            return res.status(404).json({ msg: 'Monitor devices tidak ditemukan.' });
         }
 
         // Update field-field
@@ -72,35 +72,35 @@ export const updateMonitorServer = async (req, res) => {
 
         await monitor.save();
 
-        res.status(200).json({ msg: 'Monitor server berhasil diperbarui.', data: monitor });
+        res.status(200).json({ msg: 'Monitor devices berhasil diperbarui.', data: monitor });
     } catch (error) {
-        console.error(`[${new Date().toLocaleString()}] - updateMonitorServer Error:`, error.message);
-        res.status(500).json({ msg: 'Gagal memperbarui monitor server.' });
+        console.error(`[${new Date().toLocaleString()}] - updateMonitorDevice Error:`, error.message);
+        res.status(500).json({ msg: 'Gagal memperbarui monitor devices.' });
     }
 };
 
-export const MonitorServerPDF = async (req, res) => {
+export const MonitorDevicesPDF = async (req, res) => {
     const { uuid } = req.body;
     const printer = new PdfPrinter(fonts);
 
     try {
         if ( !uuid ) { return res.status(400).json({ msg: 'UUID Undefined' })};
 
-        const monitorData = await MonitorServers.findOne({ where: { uuidServers: uuid } });
+        const monitorData = await MonitorDevices.findOne({ where: { uuidDevices: uuid } });
 
         if (!monitorData) {
             return res.status(404).json({ msg: 'Monitor not found' });
         }
 
-        const logs = await LogsServers.findAll({
-            where: { uuidServers: monitorData.uuidServers },
+        const logs = await LogsDevices.findAll({
+            where: { uuidDevices: monitorData.uuidDevices },
             order: [['createdAt', 'ASC']]
         });
 
         const monitor = monitorData.toJSON();
-        monitor.logs = await ArrayUptimeLogs(logs, 'server');
+        monitor.logs = await ArrayUptimeLogs(logs, 'devices');
 
-        const docDefinition = ServerPDFTemplates(monitor);
+        const docDefinition = DevicesPDFTemplates(monitor);
         const pdfDoc = printer.createPdfKitDocument(docDefinition);
 
         res.setHeader('Content-Type', 'application/pdf');

@@ -106,7 +106,7 @@ export const ArrayUptimeLogs = async (attribute, type) => {
             .join(':');
 
         let uptimeClean = log.uptime;
-        if (type === 'server' && log.uptime) {
+        if (type === 'devices' && log.uptime) {
             uptimeClean = log.uptime.split(' ').filter(p => !p.endsWith('s')).join(' ');
         }
 
@@ -117,7 +117,7 @@ export const ArrayUptimeLogs = async (attribute, type) => {
             timeRange: `${startTime} - ${endTime}`,
             uptime: uptimeClean,
             statusCode: log.statusCode,
-            ...(type === 'server' && {
+            ...(type === 'devices' && {
                 cpuUsage: log.cpuUsage,
                 diskUsage: log.diskUsage,
                 ramUsage: log.ramUsage,
@@ -153,9 +153,6 @@ export const ArrayUptimeLogs = async (attribute, type) => {
                 .join(':');
 
             let uptimeClean = log.uptime;
-            if (type === 'server' && log.uptime) {
-                uptimeClean = log.uptime.split(' ').filter(p => !p.endsWith('s')).join(' ');
-            }
 
             uptimeLogs.push({
                 status: log.status,
@@ -164,7 +161,7 @@ export const ArrayUptimeLogs = async (attribute, type) => {
                 timeRange: `${startTime} - ${endTime}`,
                 uptime: uptimeClean,
                 statusCode: log.statusCode,
-                ...(type === 'server' && {
+                ...(type === 'devices' && {
                     cpuUsage: log.cpuUsage,
                     diskUsage: log.diskUsage,
                     ramUsage: log.ramUsage,
@@ -187,7 +184,7 @@ export const ArraySummaryLogs = async (attribute, type) => {
     for (let i = 0; i < lengthAttribute - 1; i++) {
         avgping += attribute[i]?.responseTime ?? 0;
         
-        if(type === "server"){
+        if(type === "devices"){
             // Handle CPU Usage
             let tempCPU = attribute[i]?.cpuUsage;
             if (tempCPU && tempCPU !== "N/A") {  // Pastikan tempCPU tidak undefined
@@ -216,7 +213,7 @@ export const ArraySummaryLogs = async (attribute, type) => {
 
     // Hitung rata-rata, pastikan tidak membagi dengan nol
     avgping = lengthAttribute > 1 ? avgping / (lengthAttribute - 1) : 0;
-    if (type === "server"){
+    if (type === "devices"){
         avgcpu = countCPU > 0 ? totalCPU / countCPU : 0;
         avgdisk = countDisk > 0 ? totalDisk / countDisk : 0;
         avgram = countRAM > 0 ? totalRAM / countRAM : 0;
@@ -237,13 +234,13 @@ export const ArraySummaryLogs = async (attribute, type) => {
     return summary;
 };
 
-export const pingServerWithRetry = async (ip, retries = 3, delay = 2000) => {
+export const pingDevicesWithRetry = async (ip, retries = 3, delay = 2000) => {
     for (let i = 0; i < retries; i++) {
-        const serverResponse = await ping.promise.probe(ip, { timeout: 2 });
-        if (serverResponse.alive) {
-            return serverResponse;
+        const devicesResponse = await ping.promise.probe(ip, { timeout: 2 });
+        if (devicesResponse.alive) {
+            return devicesResponse;
         }
-        console.log(`[${new Date().toLocaleString()}] - Retry ${i + 1}: Server masih DOWN (${ip})`);
+        console.log(`[${new Date().toLocaleString()}] - Retry ${i + 1}: Devices masih DOWN (${ip})`);
         await new Promise(res => setTimeout(res, delay)); 
     }
     return { alive: false };

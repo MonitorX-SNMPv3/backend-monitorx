@@ -1,19 +1,19 @@
 import { DataTypes } from "sequelize";
 import db from "../config/database.js";
 
-const LogsServers = db.define('logs_servers', {
-    uuidLogsServers: {
+
+const IncidentsDevices = db.define('incidents_devices', {
+    uuidIncidents: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
-        allowNull: true,
+        allowNull: false,
         primaryKey: true,
         validate: {
-            notEmpty: true
+            notEmpty: true,
         }
     },
-    uuidServers: {
+    uuidDevices: {
         type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
         allowNull: false,
         validate: {
             notEmpty: true,
@@ -26,51 +26,31 @@ const LogsServers = db.define('logs_servers', {
             notEmpty: true,
         }
     },
-    responseTime: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        validate: {
-            notEmpty: true,
-        }
-    },
-    uptime: {
+    rootcause: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
             notEmpty: true,
         }
     },
-    cpuUsage: {
+    started: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
             notEmpty: true,
         }
     },
-    ramUsage: {
+    resolved: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: "-",
+    },
+    duration: {
         type: DataTypes.STRING,
         allowNull: false,
-        validate: {
-            notEmpty: true,
-        }
-    },
-    diskUsage: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-            notEmpty: true,
-        }
-    },
-    statusCode: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        validate: {
-            notEmpty: true,
-        }
-    },
-
+    }
 }, {
-    timestamps: true,
-})
+    timestamps: true, // Sequelize akan otomatis menambahkan createdAt & updatedAt
+});
 
-export default LogsServers;
+export default IncidentsDevices;

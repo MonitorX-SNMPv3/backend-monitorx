@@ -2,7 +2,7 @@ import { DataTypes } from "sequelize";
 import db from "../config/database.js";
 
 
-const ActivityServer = db.define('activity_servers', {
+const ActivityDevices = db.define('activity_devices', {
     uuidActivity: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -30,4 +30,4 @@ const ActivityServer = db.define('activity_servers', {
     timestamps: true, // Sequelize akan otomatis menambahkan createdAt & updatedAt
 });
 
-export default ActivityServer;
+export default ActivityDevices;

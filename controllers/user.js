@@ -58,3 +58,33 @@ export const deleteUser = async (req, res) => {
         res.status(502).json({ msg: error.message });
     }
 };
+
+export const updateUser = async (req, res) => {
+    const { uuid, type, name, email, password } = req.body;
+
+    if (!uuid) {
+        return res.status(400).json({ msg: "User ID (uuid) is required!" });
+    }
+
+    try {
+        const user = await Users.findOne({ where: { uuidUsers: uuid } });
+        if (!user) {
+            return res.status(404).json({ msg: "User not found!" });
+        }
+
+        user.type = type || user.type;
+        user.name = name || user.name;
+        user.email = email || user.email;
+
+        if (password) {
+            const hashedPass = await argon2.hash(password);
+            user.password = hashedPass;
+        }
+
+        await user.save();
+
+        res.status(200).json({ msg: "User successfully updated!" });
+    } catch (error) {
+        res.status(400).json({ msg: error.message });
+    }
+};

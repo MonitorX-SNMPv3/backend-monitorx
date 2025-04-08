@@ -1,45 +1,45 @@
 import path from "path";
 import { spawn } from "child_process";
-import LogsServers from "../models/logsServer.js";
-import { pingServerWithRetry } from "../utils/logsHelper.js";
-import MonitorServers from "../models/monitorServer.js";
-import { HandleOngoingIncidentsServer, HandleResolvedIncidentsServer } from "./serverIncidents.js";
+import LogsDevices from "../models/logsDevices.js";
+import { pingDevicesWithRetry } from "../utils/logsHelper.js";
+import MonitorDevices from "../models/monitorDevices.js";
+import { HandleOngoingIncidentsDevices, HandleResolvedIncidentsDevices } from "./devicesIncidents.js";
 
-export const ServiceServers = async ( attribute ) => {
+export const ServiceDevices = async ( attribute ) => {
     const ip = attribute.ipaddress;
     let responseTime = 0, statusCode = 502;
     let status = "DOWN", uptime = "N/A", cpuUsage = "N/A", ramUsage = "N/A", diskUsage = "N/A";
     let result = null;
 
     try {
-        const monitor = await MonitorServers.findOne({
-            where: { uuidServers: attribute.uuidServers },
+        const monitor = await MonitorDevices.findOne({
+            where: { uuidDevices: attribute.uuidDevices },
             order: [['createdAt', 'DESC']],
         });
 
-        const logs = await LogsServers.findAll({
-            where: { uuidServers: attribute.uuidServers },
+        const logs = await LogsDevices.findAll({
+            where: { uuidDevices: attribute.uuidDevices },
             order: [['createdAt', 'DESC']]
         });
 
         if (monitor && monitor.running === "PAUSED") {
-            console.log(`[${new Date().toLocaleString()}] - Server Logs - ${attribute.ipaddress} Running Status PAUSED.`);
+            console.log(`[${new Date().toLocaleString()}] - Devices Logs - ${attribute.ipaddress} Running Status PAUSED.`);
             return;
         }
 
-        const serverResponse = await pingServerWithRetry(ip);
-        status = serverResponse.alive ? "UP" : "DOWN";
+        const devicesResponse = await pingDevicesWithRetry(ip);
+        status = devicesResponse.alive ? "UP" : "DOWN";
 
         if (status === "UP") {
-            responseTime = serverResponse.time;
+            responseTime = devicesResponse.time;
             statusCode = 200;
 
             result = await getValidSNMPStatus(attribute);
             console.log(`[${new Date().toLocaleString()}] - CPU: ${result.cpu_usage}, RAM: ${result.ram_usage}, DISK: ${result.disk_usage}, UPTIME: ${result.uptime}`);
 
             if ( logs[0]?.status === "DOWN" && result ){
-                console.log(`[${new Date().toLocaleString()}] - Server UP, Solving Incidents (${attribute.ipaddress})`);
-                await HandleResolvedIncidentsServer(attribute);
+                console.log(`[${new Date().toLocaleString()}] - Devices UP, Solving Incidents (${attribute.ipaddress})`);
+                await HandleResolvedIncidentsDevices(attribute);
             }
 
             uptime = result.uptime;
@@ -50,16 +50,16 @@ export const ServiceServers = async ( attribute ) => {
             statusCode = 502;
             responseTime = 0;
 
-            console.log(`[${new Date().toLocaleString()}] - Server Down, incidents (${attribute.ipaddress}) checked`);
-            await HandleOngoingIncidentsServer(attribute);
+            console.log(`[${new Date().toLocaleString()}] - Devices Down, incidents (${attribute.ipaddress}) checked`);
+            await HandleOngoingIncidentsDevices(attribute);
         }
     } catch (error) {
-        console.log(`[${new Date().toLocaleString()}] - Server Logs - ${error.message}`);
+        console.log(`[${new Date().toLocaleString()}] - Devices Logs - ${error.message}`);
         statusCode = error.response?.status || 502;
     }
 
-    await LogsServers.create({
-        uuidServers: attribute.uuidServers,
+    await LogsDevices.create({
+        uuidDevices: attribute.uuidDevices,
         status,
         responseTime,
         uptime,
@@ -69,7 +69,7 @@ export const ServiceServers = async ( attribute ) => {
         statusCode,
     });
 
-    console.log(`[${new Date().toLocaleString()}] - Server SNMP - (${attribute.ipaddress}) - Status: ${status}, Response Time: ${responseTime}, Code: ${statusCode}`);
+    console.log(`[${new Date().toLocaleString()}] - Devices SNMP - (${attribute.ipaddress}) - Status: ${status}, Response Time: ${responseTime}, Code: ${statusCode}`);
 };
 
 
@@ -92,8 +92,8 @@ export const ServiceSNMPGetStatus = async (attribute) => {
         const pythonPath = path.resolve("script/SNMPGetInfo.py");
         const processPy = spawn("python", [pythonPath]);
 
-        const serverAttribute = JSON.stringify({
-            uuidServers: attribute.uuidServers,
+        const devicesAttribute = JSON.stringify({
+            uuidDevices: attribute.uuidDevices,
             ipaddress: attribute.ipaddress,
             snmp_username: attribute.snmp_username,
             snmp_authkey: attribute.snmp_authkey,
@@ -102,7 +102,7 @@ export const ServiceSNMPGetStatus = async (attribute) => {
         });
         
         // Send input to Python script
-        processPy.stdin.write(serverAttribute);
+        processPy.stdin.write(devicesAttribute);
         processPy.stdin.end();
 
         let output = "";

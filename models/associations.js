@@ -1,15 +1,15 @@
 import ActivityHTTPs from "./activityHTTP.js";
 import ActivityPort from "./activityPort.js";
-import ActivityServer from "./activityServer.js";
+import ActivityDevices from "./activityDevices.js";
 import IncidentsHTTPs from "./incidentsHTTP.js";
 import IncidentsPorts from "./incidentsPort.js";
-import IncidentsServers from "./incidentsServer.js";
+import IncidentsDevices from "./incidentsDevices.js";
 import LogsHTTPs from "./logsHTTP.js";
 import LogsPorts from "./logsPort.js";
-import LogsServers from "./logsServer.js";
+import LogsDevices from "./logsDevices.js";
 import MonitorHTTPs from "./monitorHTTP.js";
 import MonitorPorts from "./monitorPorts.js";
-import MonitorServers from "./monitorServer.js";
+import MonitorDevices from "./monitorDevices.js";
 import Users from "./userModels.js";
 
 //? Relasi Users */
@@ -20,9 +20,9 @@ Users.hasMany(MonitorHTTPs, {
     onUpdate: "CASCADE",
     constraints: true,
 });
-Users.hasMany(MonitorServers, {
+Users.hasMany(MonitorDevices, {
     foreignKey: "uuidUsers",
-    as: "monitor_servers",
+    as: "monitor_devices",
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
     constraints: true,
@@ -76,21 +76,21 @@ MonitorPorts.hasMany(IncidentsPorts, {
     constraints: true,
 });
 
-//? Relasi Servers */
-MonitorServers.belongsTo(Users, {
+//? Relasi Devices */
+MonitorDevices.belongsTo(Users, {
     foreignKey: "uuidUsers",
     as: "users"
 });
-MonitorServers.hasMany(LogsServers, {
-    foreignKey: "uuidServers",
-    as: "logs_servers",
+MonitorDevices.hasMany(LogsDevices, {
+    foreignKey: "uuidDevices",
+    as: "logs_devices",
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
     constraints: true,
 });
-MonitorServers.hasMany(IncidentsServers, {
-    foreignKey: "uuidServers",
-    as: "incidents_servers",
+MonitorDevices.hasMany(IncidentsDevices, {
+    foreignKey: "uuidDevices",
+    as: "incidents_devices",
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
     constraints: true,
@@ -105,9 +105,9 @@ LogsPorts.belongsTo(MonitorPorts, {
     foreignKey: "uuidPorts",
     as: "logs_ports",
 });
-LogsServers.belongsTo(MonitorServers, {
-    foreignKey: "uuidServers",
-    as: "logs_servers",
+LogsDevices.belongsTo(MonitorDevices, {
+    foreignKey: "uuidDevices",
+    as: "logs_devices",
 });
 
 //? Relasi Incidents */
@@ -137,21 +137,21 @@ IncidentsPorts.hasMany(ActivityPort, {
 });
 
 
-IncidentsServers.belongsTo(MonitorServers, {
-    foreignKey: "uuidServers",
-    as: "incidents_servers",
+IncidentsDevices.belongsTo(MonitorDevices, {
+    foreignKey: "uuidDevices",
+    as: "incidents_devices",
 });
-IncidentsServers.hasMany(ActivityServer, {
+IncidentsDevices.hasMany(ActivityDevices, {
     foreignKey: "uuidIncidents",
-    as: "activity_servers",
+    as: "activity_devices",
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
     constraints: true,
 });
 
-ActivityServer.belongsTo(IncidentsServers, {
+ActivityDevices.belongsTo(IncidentsDevices, {
     foreignKey: "uuidIncidents",
-    as: "incidents_servers",
+    as: "incidents_devices",
 });
 ActivityPort.belongsTo(IncidentsPorts, {
     foreignKey: "uuidIncidents",
@@ -166,14 +166,14 @@ export {
     Users, 
     MonitorHTTPs, 
     MonitorPorts, 
-    MonitorServers, 
+    MonitorDevices, 
     LogsHTTPs, 
     LogsPorts, 
-    LogsServers, 
+    LogsDevices, 
     IncidentsHTTPs, 
     IncidentsPorts, 
-    IncidentsServers, 
+    IncidentsDevices, 
     ActivityHTTPs, 
     ActivityPort, 
-    ActivityServer 
+    ActivityDevices
 };

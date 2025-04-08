@@ -41,7 +41,7 @@ export const SignIn = async (req, res) => {
         res.json({ token, user: payload });
     } catch (error) {
         console.error("Login error:", error);
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ error: "Internal devices error" });
     }
 };
 
@@ -50,7 +50,7 @@ export const Me = async (req, res) => {
         res.status(200).json({ user: req.user });
     } catch (error) {
         console.error("Error pada endpoint /me:", error);
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ error: "Internal devices error" });
     }
 };
 
@@ -65,7 +65,7 @@ export const SignOut = async (req, res) => {
         res.status(200).json({ msg: "Logout Success!"});
     } catch (error) {
         console.error("Logout error:", error);
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ error: "Internal devices error" });
     }
 
 }

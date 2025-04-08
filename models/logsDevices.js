@@ -1,19 +1,19 @@
 import { DataTypes } from "sequelize";
 import db from "../config/database.js";
 
-
-const IncidentsServers = db.define('incidents_servers', {
-    uuidIncidents: {
+const LogsDevices = db.define('logs_devices', {
+    uuidLogsDevices: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
-        allowNull: false,
+        allowNull: true,
         primaryKey: true,
         validate: {
-            notEmpty: true,
+            notEmpty: true
         }
     },
-    uuidServers: {
+    uuidDevices: {
         type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         allowNull: false,
         validate: {
             notEmpty: true,
@@ -26,31 +26,51 @@ const IncidentsServers = db.define('incidents_servers', {
             notEmpty: true,
         }
     },
-    rootcause: {
+    responseTime: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notEmpty: true,
+        }
+    },
+    uptime: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
             notEmpty: true,
         }
     },
-    started: {
+    cpuUsage: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
             notEmpty: true,
         }
     },
-    resolved: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        defaultValue: "-",
-    },
-    duration: {
+    ramUsage: {
         type: DataTypes.STRING,
         allowNull: false,
-    }
-}, {
-    timestamps: true, // Sequelize akan otomatis menambahkan createdAt & updatedAt
-});
+        validate: {
+            notEmpty: true,
+        }
+    },
+    diskUsage: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+            notEmpty: true,
+        }
+    },
+    statusCode: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notEmpty: true,
+        }
+    },
 
-export default IncidentsServers;
+}, {
+    timestamps: true,
+})
+
+export default LogsDevices;
