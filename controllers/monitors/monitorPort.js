@@ -1,5 +1,11 @@
+import PdfPrinter from "pdfmake";
 import MonitorPorts from "../../models/monitorPorts.js";
 import Users from "../../models/userModels.js";
+import { fonts } from "../../utils/templates/fonts.js";
+import LogsPorts from "../../models/logsPort.js";
+import { ArrayUptimeLogs } from "../../utils/logsHelper.js";
+import IncidentsPorts from "../../models/incidentsPort.js";
+import { GlobalPDFTemplates } from "../../utils/templates/monitorSummary.js";
 
 export const createMonitorPorts = async (req, res) => {
     const { uuidUsers, hostname, ipaddress, port, protocol, statusCheck } = req.body;
@@ -34,24 +40,20 @@ export const createMonitorPorts = async (req, res) => {
 export const UpdateMonitorPorts = async (req, res) => {
     const { uuid, hostname, ipaddress, port, protocol, statusCheck } = req.body;
 
-    // Validate required fields
     if (!uuid || !hostname || !ipaddress || !port || !protocol || !statusCheck) {
         return res.status(400).json({ msg: "Data ada yang kosong! Isi semua kolom yang ada!" });
     }
 
-    // Validate ipaddress format if necessary (e.g., must start with http:// or https://)
     if (!ipaddress.startsWith("http://") && !ipaddress.startsWith("https://")) {
         return res.status(400).json({ msg: "IP Address harus dimulai dengan 'http://' atau 'https://'" });
     }
 
     try {
-        // Find the port monitor record using the provided uuid (assuming the field in the DB is uuidPorts)
         const monitor = await MonitorPorts.findOne({ where: { uuidPorts: uuid } });
         if (!monitor) {
             return res.status(404).json({ msg: "Monitor tidak ditemukan" });
         }
 
-        // Update the monitor record with new values
         monitor.hostname = hostname ?? monitor.hostname;
         monitor.ipaddress = ipaddress ?? monitor.ipaddress;
         monitor.statusCheck = statusCheck ?? monitor.statusCheck;
@@ -64,5 +66,65 @@ export const UpdateMonitorPorts = async (req, res) => {
         res.status(200).json({ msg: "Data Port berhasil diperbarui" });
     } catch (error) {
         res.status(400).json({ msg: error.message });
+    }
+};
+
+
+export const MonitorPortsPDF = async (req, res) => {
+    const { uuid } = req.body;
+    const printer = new PdfPrinter(fonts);
+
+    try {
+        if (!uuid) { 
+            return res.status(400).json({ msg: 'UUID Undefined' });
+        }
+
+        const monitorData = await MonitorPorts.findOne({ 
+            where: { uuidPorts: uuid } 
+        });
+
+        if (!monitorData) {
+            return res.status(404).json({ msg: 'Monitor not found' });
+        }
+
+        const logs = await LogsPorts.findAll({
+            where: { uuidPorts: monitorData.uuidPorts },
+            order: [['createdAt', 'ASC']]
+        });
+
+        const monitor = monitorData.toJSON();
+        monitor.logs = await ArrayUptimeLogs(logs, 'ports');
+
+        const incidentsData = await IncidentsPorts.findAll({
+            where: { uuidPorts: uuid },
+            order: [['createdAt', 'DESC']]
+        });
+
+        const incidents = incidentsData.map(incident => {
+            const inc = incident.toJSON();
+            if (inc.started) {
+                const dateObj = new Date(Number(inc.started));
+                inc.started = new Date(dateObj.getTime() + 7 * 60 * 60 * 1000)
+                    .toLocaleString("id-ID", { timeZone: "Asia/Bangkok" });
+            }
+            if (inc.resolved && inc.resolved !== "-") {
+                const dateObj = new Date(Number(inc.resolved));
+                inc.resolved = new Date(dateObj.getTime() + 7 * 60 * 60 * 1000)
+                    .toLocaleString("id-ID", { timeZone: "Asia/Bangkok" });
+            }
+            return inc;
+        });
+        monitor.incidents = incidents;
+
+        const docDefinition = GlobalPDFTemplates(monitor);
+        const pdfDoc = printer.createPdfKitDocument(docDefinition);
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=monitor-summary.pdf');
+
+        pdfDoc.pipe(res);
+        pdfDoc.end();
+    } catch (error) {
+        res.status(500).json({ msg: error.message });
     }
 };

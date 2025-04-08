@@ -2,7 +2,7 @@ import { DataTypes } from "sequelize";
 import db from "../config/database.js";
 
 
-const ActivityPort = db.define('activity_port', {
+const ActivityPorts = db.define('activity_ports', {
     uuidActivity: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -30,4 +30,4 @@ const ActivityPort = db.define('activity_port', {
     timestamps: true, // Sequelize akan otomatis menambahkan createdAt & updatedAt
 });
 
-export default ActivityPort;
+export default ActivityPorts;

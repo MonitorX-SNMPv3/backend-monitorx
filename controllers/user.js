@@ -23,7 +23,7 @@ export const createUsers = async (req, res) => {
         });
         res.status(201).json({ msg: "User berhasil ditambahkan"})
     } catch (error) {
-        res.status(400).json({ msg: error.message })
+        res.status(400).json({ msg: error.message });
     }
 };
 

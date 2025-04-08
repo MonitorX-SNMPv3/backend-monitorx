@@ -1,5 +1,5 @@
 import ActivityHTTPs from "./activityHTTP.js";
-import ActivityPort from "./activityPort.js";
+import ActivityPorts from "./activityPorts.js";
 import ActivityDevices from "./activityDevices.js";
 import IncidentsHTTPs from "./incidentsHTTP.js";
 import IncidentsPorts from "./incidentsPort.js";
@@ -128,7 +128,7 @@ IncidentsPorts.belongsTo(MonitorPorts, {
     foreignKey: "uuidPorts",
     as: "incidents_ports",
 });
-IncidentsPorts.hasMany(ActivityPort, {
+IncidentsPorts.hasMany(ActivityPorts, {
     foreignKey: "uuidIncidents",
     as: "activity_port",
     onDelete: "CASCADE",
@@ -153,7 +153,7 @@ ActivityDevices.belongsTo(IncidentsDevices, {
     foreignKey: "uuidIncidents",
     as: "incidents_devices",
 });
-ActivityPort.belongsTo(IncidentsPorts, {
+ActivityPorts.belongsTo(IncidentsPorts, {
     foreignKey: "uuidIncidents",
     as: "incidents_ports",
 });
@@ -174,6 +174,6 @@ export {
     IncidentsPorts, 
     IncidentsDevices, 
     ActivityHTTPs, 
-    ActivityPort, 
+    ActivityPorts, 
     ActivityDevices
 };

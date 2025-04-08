@@ -163,20 +163,13 @@ export const DevicesPDFTemplates = (data) => {
             ],
       
             // Body
-            [
-              { text: 'Ongoing', fontSize: 10 },
-              { text: 'Connection Timeout', fontSize: 10 },
-              { text: 'Mon, 24 Aug 2025 20:25', fontSize: 10 },
-              { text: 'Mon, 24 Aug 2025 20:30', fontSize: 10 },
-              { text: '20d 20h 50m', fontSize: 10 }
-            ],
-            [
-              { text: 'Ongoing', fontSize: 10 },
-              { text: 'Connection Timeout', fontSize: 10 },
-              { text: 'Mon, 24 Aug 2025 20:25', fontSize: 10 },
-              { text: 'Mon, 24 Aug 2025 20:30', fontSize: 10 },
-              { text: '0d 0h 5m', fontSize: 10 }
-            ],  
+            ...data?.incidents?.slice(-10).map(item => [
+              { text: item.status || '-', fontSize: 10 },
+              { text: (item.rootcause ?? '-'), fontSize: 10 },
+              { text: item.started || '-', fontSize: 10 },
+              { text: item.resolved || '-', fontSize: 10 },
+              { text: item.duration || '-', fontSize: 10 },
+            ])
           ]
         },
         layout: 'lightHorizontalLines', // bisa juga pakai 'noBorders'
@@ -359,20 +352,14 @@ export const GlobalPDFTemplates = (data) => {
             ],
       
             // Body
-            [
-              { text: 'Ongoing', fontSize: 10 },
-              { text: 'Connection Timeout', fontSize: 10 },
-              { text: 'Mon, 24 Aug 2025 20:25', fontSize: 10 },
-              { text: 'Mon, 24 Aug 2025 20:30', fontSize: 10 },
-              { text: '20d 20h 50m', fontSize: 10 }
-            ],
-            [
-              { text: 'Ongoing', fontSize: 10 },
-              { text: 'Connection Timeout', fontSize: 10 },
-              { text: 'Mon, 24 Aug 2025 20:25', fontSize: 10 },
-              { text: 'Mon, 24 Aug 2025 20:30', fontSize: 10 },
-              { text: '0d 0h 5m', fontSize: 10 }
-            ],  
+            // Data Rows (map from logs)
+            ...data?.incidents?.slice(-10).map(item => [
+              { text: item.status || '-', fontSize: 10 },
+              { text: (item.rootcause ?? '-'), fontSize: 10 },
+              { text: item.started || '-', fontSize: 10 },
+              { text: item.resolved || '-', fontSize: 10 },
+              { text: item.duration || '-', fontSize: 10 },
+            ])
           ]
         },
         layout: 'lightHorizontalLines', // bisa juga pakai 'noBorders'

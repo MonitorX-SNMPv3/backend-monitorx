@@ -5,7 +5,6 @@ import MonitorHTTPs from "../models/monitorHTTP.js";
 
 const ConvertUptimeToMs = (uptimeStr) => {
     if (!uptimeStr || uptimeStr === "N/A") return 0;
-    // Updated regex to capture seconds as well
     const regex = /(\d+)\s*d\s+(\d+)\s*h\s+(\d+)\s*m\s+(\d+)\s*s/;
     const matches = uptimeStr.match(regex);
     if (!matches) return 0;
@@ -19,7 +18,6 @@ const ConvertUptimeToMs = (uptimeStr) => {
            (seconds * 1000);
 };
 
-// Helper: Convert milliseconds to a formatted string "Xd Xh Xm Xs"
 const ConvertMStoFormatUptime = (ms) => {
     if (!ms || ms < 0) return "0d 0h 0m 0s";
     const days = Math.floor(ms / (24 * 60 * 60 * 1000));
@@ -32,13 +30,11 @@ const ConvertMStoFormatUptime = (ms) => {
 };
 
 const CalculateUptimeHTTPs = async (attribute) => {
-    // Retrieve the most recent log for the given uuidHTTPs
     const LogsData = await LogsHTTPs.findOne({ 
         where: { uuidHTTPs: attribute.uuidHTTPs }, 
         order: [['createdAt', 'DESC']] 
     });
 
-    // If no logs are found, use statusCheck value to handle uptime
     if (!LogsData) {
         return HandleUptimeWithStatusCheck(attribute.statusCheck);
     }
@@ -48,21 +44,14 @@ const CalculateUptimeHTTPs = async (attribute) => {
     const nowTime = Date.now();
 
     if (uptimePrev !== "N/A") {
-        // Convert the previous uptime (stored as a string) into milliseconds
         const uptimePrevMs = ConvertUptimeToMs(uptimePrev);
-        // Calculate the elapsed time since the previous log was created
         const elapsedTime = nowTime - prevCreatedTime;
-        // Sum the previous uptime and the elapsed time
         const totalUptimeMs = uptimePrevMs + elapsedTime;
-        // Convert the total uptime back to the desired format (now including seconds)
         return ConvertMStoFormatUptime(totalUptimeMs);
     } else {
-        // If uptime is "N/A", calculate uptime based on the statusCheck value.
         return HandleUptimeWithStatusCheck(attribute.statusCheck);
     }
 };
-
-
 
 export const ServiceHTTPs = async (attribute) => {
     const ip = attribute.ipaddress;

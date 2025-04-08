@@ -1,7 +1,7 @@
 import express from "express";
-import { createMonitorHTTPs, UpdateMonitorHTTPs } from "../controllers/monitors/monitorHTTP.js";
+import { createMonitorHTTPs, MonitorHTTPsPDF, UpdateMonitorHTTPs } from "../controllers/monitors/monitorHTTP.js";
 import { createMonitorDevices, MonitorDevicesPDF, UpdateMonitorDevices } from "../controllers/monitors/monitorDevices.js";
-import { createMonitorPorts, UpdateMonitorPorts } from "../controllers/monitors/monitorPort.js";
+import { createMonitorPorts, MonitorPortsPDF, UpdateMonitorPorts } from "../controllers/monitors/monitorPort.js";
 import { Calculate24HourSummary, CalculateGlobalSLA24h, CalculateWeeklySLA, DeleteMonitor, GetAllMonitorWithLogs, GetMonitorStatusCount, PauseMonitor, StartMonitor, TestAlertEmail } from "../controllers/monitor.js";
 import { CalculateGlobalSLA } from "../controllers/monitor.js";
 
@@ -12,6 +12,8 @@ router.post('/api/add_monitor_devices', createMonitorDevices);
 router.post('/api/add_monitor_port', createMonitorPorts);
 router.post('/api/calculate_24h_summary', Calculate24HourSummary);
 router.post('/api/monitor_devices_pdf', MonitorDevicesPDF);
+router.post('/api/monitor_https_pdf', MonitorHTTPsPDF);
+router.post('/api/monitor_ports_pdf', MonitorPortsPDF);
 router.post('/api/test_alert', TestAlertEmail);
 
 router.get('/api/get_monitor_with_logs', GetAllMonitorWithLogs);

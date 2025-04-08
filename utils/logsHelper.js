@@ -1,6 +1,8 @@
 import ping from "ping";
 import axios from "axios";
 import { performance } from 'perf_hooks';
+import net from 'net';
+import dgram from 'dgram';
 
 export const ConvertLocaleStringToMS = (data) => {
     let [ datePart, timePart ] = data.split(", ");
@@ -277,5 +279,123 @@ export const fetchHTTPWithRetry = async (url, retries = 3, delay = 2000) => {
     }
     console.log((`[${new Date().toLocaleString()}] - HTTP request gagal setelah beberapa percobaan.`));
     return null;
+};
+
+
+export const pingTCPWithRetry = async (ip, port, retries = 3, delay = 2000) => {
+    const attemptConnection = () => {
+        return new Promise((resolve) => {
+            const socket = new net.Socket();
+            const startTime = Date.now();
+            let responded = false;
+
+            socket.setTimeout(2000);
+
+            socket.on('connect', () => {
+                const responseTime = Date.now() - startTime;
+                responded = true;
+                socket.destroy();
+                resolve({ alive: true, time: responseTime });
+            });
+
+            socket.on('timeout', () => {
+                if (!responded) {
+                    socket.destroy();
+                    resolve({ alive: false, time: 0 });
+                }
+            });
+
+            socket.on('error', () => {
+                if (!responded) {
+                    socket.destroy();
+                    resolve({ alive: false, time: 0 });
+                }
+            });
+
+            socket.connect(port, ip);
+        });
+    };
+
+    for (let i = 0; i < retries; i++) {
+        const pingResponse = await attemptConnection();
+        if (pingResponse.alive) {
+            return pingResponse;
+        }
+        console.log(`[${new Date().toLocaleString()}] - Retry ${i + 1}: Port DOWN (${ip}:${port})`);
+        await new Promise((res) => setTimeout(res, delay));
+    }
+    return { alive: false, time: 0 };
+};
+
+
+export const pingUDPWithRetry = async (ip, port, retries = 3, delay = 2000) => {
+    const message = Buffer.from("ping");
+    let attempt = 0;
+
+    const attemptPing = () => {
+        return new Promise((resolve) => {
+            const socket = dgram.createSocket('udp4');
+            const startTime = Date.now();
+            let finished = false;
+
+            // Helper to ensure we only resolve once.
+            const finish = (result) => {
+                if (!finished) {
+                    finished = true;
+                    resolve(result);
+                }
+            };
+
+            // Set a timeout to close the socket if no response comes in time.
+            const timeout = setTimeout(() => {
+                try {
+                    socket.close();
+                } catch (e) {}
+                finish({ alive: false, time: 0 });
+            }, 2000);
+
+            // Listen once for a response message.
+            socket.once('message', (msg) => {
+                clearTimeout(timeout);
+                const responseTime = Date.now() - startTime;
+                try {
+                    socket.close();
+                } catch (e) {}
+                finish({ alive: true, time: responseTime });
+            });
+
+            // Listen once for any errors on the socket.
+            socket.once('error', (err) => {
+                clearTimeout(timeout);
+                try {
+                    socket.close();
+                } catch (e) {}
+                finish({ alive: false, time: 0 });
+            });
+
+            // Send the ping message.
+            socket.send(message, 0, message.length, port, ip, (err) => {
+                if (err) {
+                    clearTimeout(timeout);
+                    try {
+                        socket.close();
+                    } catch (e) {}
+                    finish({ alive: false, time: 0 });
+                }
+            });
+        });
+    };
+
+    // Retry loop.
+    while (attempt < retries) {
+        const result = await attemptPing();
+        if (result.alive) {
+            return result;
+        }
+        console.log(`[${new Date().toLocaleString()}] - Retry ${attempt + 1}: UDP DOWN (${ip}:${port})`);
+        await new Promise(res => setTimeout(res, delay));
+        attempt++;
+    }
+    return { alive: false, time: 0 };
 };
 

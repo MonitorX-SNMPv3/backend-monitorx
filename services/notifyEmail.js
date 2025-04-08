@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import Users from "../models/userModels.js";
 import ActivityDevices from "../models/activityDevices.js";
 import ActivityHTTPs from "../models/activityHTTP.js";
-import ActivityPort from "../models/activityPort.js";
+import ActivityPort from "../models/activityPorts.js";
 import { getFormattedCurrentTime } from "../utils/time.js";
 import { emailTemplate } from "../utils/templates/emailTemplate.js";
 
