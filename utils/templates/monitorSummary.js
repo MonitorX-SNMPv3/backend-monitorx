@@ -21,7 +21,7 @@ export const DevicesPDFTemplates = (data) => {
       {
         columns: [
           {
-            width: '35%',
+            width: '45%',
             stack: [
               {
                 columns: [
@@ -97,7 +97,7 @@ export const DevicesPDFTemplates = (data) => {
         style: 'tableExample',
         table: {
           headerRows: 1,
-          widths: [ 30, 50, 105, 70, 55, 55, 55 ],
+          widths: [30, 50, 105, 70, 55, 55, 55],
           body: [
             // Header
             [
@@ -109,22 +109,35 @@ export const DevicesPDFTemplates = (data) => {
               { text: 'RAM Usage', style: 'tableHeader' },
               { text: 'Disk Usage', style: 'tableHeader' }
             ],
-            
-            // Data Rows (map from logs)
-            ...data?.logs?.slice(-10).map(log => [
-              { text: log.status || '-', fontSize: 10 },
-              { text: (log.responseTime ?? '-') + 'ms', fontSize: 10 },
-              { text: log.date || '-', fontSize: 10 },
-              { text: log.uptime || '-', fontSize: 10 },
-              { text: log.cpuUsage || '-', fontSize: 10 },
-              { text: log.ramUsage || '-', fontSize: 10 },
-              { text: log.diskUsage || '-', fontSize: 10 }
-            ])
-          ]          
+            // Cek apakah ada data, jika tidak tampilkan satu baris pesan
+            ...(data?.logs?.length
+              ? data.logs.slice(-10).map(log => [
+                  { text: log.status || '-', fontSize: 10 },
+                  { text: (log.responseTime ?? '-') + 'ms', fontSize: 10 },
+                  { text: log.date || '-', fontSize: 10 },
+                  { text: log.uptime || '-', fontSize: 10 },
+                  { text: log.cpuUsage || '-', fontSize: 10 },
+                  { text: log.ramUsage || '-', fontSize: 10 },
+                  { text: log.diskUsage || '-', fontSize: 10 }
+                ])
+              : [
+                  [
+                    {
+                      text: 'No logs available',
+                      colSpan: 7,
+                      alignment: 'center',
+                      italics: true,
+                      color: 'gray',
+                    },
+                    {}, {}, {}, {}, {}, {}
+                  ]
+                ])
+          ]
         },
-        layout: 'lightHorizontalLines', 
+        layout: 'lightHorizontalLines',
         margin: [0, 10, 0, 10]
       },
+      
         
       // Lastest Incidents: Subheader
       { text: 'Lastest Incidents', style: 'subheader'},
@@ -151,7 +164,7 @@ export const DevicesPDFTemplates = (data) => {
         style: 'tableExample',
         table: {
           headerRows: 1,
-          widths: [40, 100, 125, 125, 65],
+          widths: [50, 100, 120, 120, 65],
           body: [
             // Header
             [
@@ -159,22 +172,34 @@ export const DevicesPDFTemplates = (data) => {
               { text: 'Root Cause', style: 'tableHeader' },
               { text: 'Started', style: 'tableHeader' },
               { text: 'Resolved', style: 'tableHeader' },
-              { text: 'Duration', style: 'tableHeader' },
+              { text: 'Duration', style: 'tableHeader' }
             ],
-      
+            
             // Body
-            ...data?.incidents?.slice(-10).map(item => [
-              { text: item.status || '-', fontSize: 10 },
-              { text: (item.rootcause ?? '-'), fontSize: 10 },
-              { text: item.started || '-', fontSize: 10 },
-              { text: item.resolved || '-', fontSize: 10 },
-              { text: item.duration || '-', fontSize: 10 },
-            ])
+            ...(data?.incidents?.length
+              ? data.incidents.slice(-10).map(item => [
+                  { text: item.status || '-', fontSize: 10 },
+                  { text: item.rootcause ?? '-', fontSize: 10 },
+                  { text: item.started || '-', fontSize: 10 },
+                  { text: item.resolved || '-', fontSize: 10 },
+                  { text: item.duration || '-', fontSize: 10 }
+                ])
+              : [[
+                  {
+                    text: 'No incidents available',
+                    colSpan: 5,
+                    alignment: 'center',
+                    italics: true,
+                    color: 'gray'
+                  },
+                  {}, {}, {}, {}
+                ]]
+            )
           ]
         },
-        layout: 'lightHorizontalLines', // bisa juga pakai 'noBorders'
+        layout: 'lightHorizontalLines',
         margin: [0, 10, 0, 10]
-      },
+      },      
     ],
 
     styles: {
@@ -227,7 +252,7 @@ export const GlobalPDFTemplates = (data) => {
       {
         columns: [
           {
-            width: '35%',
+            width: '50%',
             stack: [
               {
                 columns: [
@@ -292,7 +317,7 @@ export const GlobalPDFTemplates = (data) => {
         style: 'tableExample',
         table: {
           headerRows: 1,
-          widths: [ 110, 110, 140, 105 ],
+          widths: [110, 110, 140, 105],
           body: [
             // Header
             [
@@ -301,19 +326,32 @@ export const GlobalPDFTemplates = (data) => {
               { text: 'Date', style: 'tableHeader' },
               { text: 'Uptime', style: 'tableHeader' },
             ],
-            
-            // Data Rows (map from logs)
-            ...data?.logs?.slice(-10).map(log => [
-              { text: log.status || '-', fontSize: 10 },
-              { text: (log.responseTime ?? '-') + 'ms', fontSize: 10 },
-              { text: log.date || '-', fontSize: 10 },
-              { text: log.uptime || '-', fontSize: 10 },
-            ])
-          ]          
+            // Cek apakah ada data, jika tidak tampilkan satu baris pesan
+            ...(data?.logs?.length
+              ? data.logs.slice(-10).map(log => [
+                  { text: log.status || '-', fontSize: 10 },
+                  { text: (log.responseTime ?? '-') + 'ms', fontSize: 10 },
+                  { text: log.date || '-', fontSize: 10 },
+                  { text: log.uptime || '-', fontSize: 10 }
+                ])
+              : [
+                  [
+                    {
+                      text: 'No logs available',
+                      colSpan: 4,
+                      alignment: 'center',
+                      italics: true,
+                      color: 'gray',
+                    },
+                    {}, {}, {}
+                  ]
+                ])
+          ]
         },
-        layout: 'lightHorizontalLines', 
+        layout: 'lightHorizontalLines',
         margin: [0, 10, 0, 10]
       },
+      
         
       // Lastest Incidents: Subheader
       { text: 'Lastest Incidents', style: 'subheader'},
@@ -340,7 +378,7 @@ export const GlobalPDFTemplates = (data) => {
         style: 'tableExample',
         table: {
           headerRows: 1,
-          widths: [40, 100, 125, 125, 65],
+          widths: [50, 100, 120, 120, 65],
           body: [
             // Header
             [
@@ -348,23 +386,35 @@ export const GlobalPDFTemplates = (data) => {
               { text: 'Root Cause', style: 'tableHeader' },
               { text: 'Started', style: 'tableHeader' },
               { text: 'Resolved', style: 'tableHeader' },
-              { text: 'Duration', style: 'tableHeader' },
+              { text: 'Duration', style: 'tableHeader' }
             ],
-      
+            
             // Body
-            // Data Rows (map from logs)
-            ...data?.incidents?.slice(-10).map(item => [
-              { text: item.status || '-', fontSize: 10 },
-              { text: (item.rootcause ?? '-'), fontSize: 10 },
-              { text: item.started || '-', fontSize: 10 },
-              { text: item.resolved || '-', fontSize: 10 },
-              { text: item.duration || '-', fontSize: 10 },
-            ])
+            ...(data?.incidents?.length
+              ? data.incidents.slice(-10).map(item => [
+                  { text: item.status || '-', fontSize: 10 },
+                  { text: item.rootcause ?? '-', fontSize: 10 },
+                  { text: item.started || '-', fontSize: 10 },
+                  { text: item.resolved || '-', fontSize: 10 },
+                  { text: item.duration || '-', fontSize: 10 }
+                ])
+              : [[
+                  {
+                    text: 'No incidents available',
+                    colSpan: 5,
+                    alignment: 'center',
+                    italics: true,
+                    color: 'gray'
+                  },
+                  {}, {}, {}, {}
+                ]]
+            )
           ]
         },
-        layout: 'lightHorizontalLines', // bisa juga pakai 'noBorders'
+        layout: 'lightHorizontalLines',
         margin: [0, 10, 0, 10]
-      },
+      }
+      
     ],
 
     styles: {

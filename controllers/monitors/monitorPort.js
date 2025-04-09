@@ -71,6 +71,17 @@ export const UpdateMonitorPorts = async (req, res) => {
 
 
 export const MonitorPortsPDF = async (req, res) => {
+    const dateFormat = new Intl.DateTimeFormat('en-GB', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    });
+
     const { uuid } = req.body;
     const printer = new PdfPrinter(fonts);
 
@@ -104,13 +115,14 @@ export const MonitorPortsPDF = async (req, res) => {
             const inc = incident.toJSON();
             if (inc.started) {
                 const dateObj = new Date(Number(inc.started));
-                inc.started = new Date(dateObj.getTime() + 7 * 60 * 60 * 1000)
-                    .toLocaleString("id-ID", { timeZone: "Asia/Bangkok" });
+                // add 7 hours
+                const adjustedStarted = new Date(dateObj.getTime() + 7 * 60 * 60 * 1000);
+                inc.started = dateFormat.format(adjustedStarted);
             }
             if (inc.resolved && inc.resolved !== "-") {
                 const dateObj = new Date(Number(inc.resolved));
-                inc.resolved = new Date(dateObj.getTime() + 7 * 60 * 60 * 1000)
-                    .toLocaleString("id-ID", { timeZone: "Asia/Bangkok" });
+                const adjustedResolved = new Date(dateObj.getTime() + 7 * 60 * 60 * 1000);
+                inc.resolved = dateFormat.format(adjustedResolved);
             }
             return inc;
         });

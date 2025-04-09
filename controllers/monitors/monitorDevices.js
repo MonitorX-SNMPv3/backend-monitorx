@@ -5,6 +5,7 @@ import Users from "../../models/userModels.js";
 import { ArrayUptimeLogs } from "../../utils/logsHelper.js";
 import { DevicesPDFTemplates } from "../../utils/templates/monitorSummary.js";
 import { fonts } from "../../utils/templates/fonts.js";
+import IncidentsDevices from "../../models/incidentsDevices.js";
 
 export const createMonitorDevices = async (req, res) => {
     const { uuidUsers, hostname, ipaddress, 
@@ -80,6 +81,17 @@ export const UpdateMonitorDevices = async (req, res) => {
 };
 
 export const MonitorDevicesPDF = async (req, res) => {
+    const dateFormat = new Intl.DateTimeFormat('en-GB', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    });
+
     const { uuid } = req.body;
     const printer = new PdfPrinter(fonts);
 
@@ -100,6 +112,28 @@ export const MonitorDevicesPDF = async (req, res) => {
         const monitor = monitorData.toJSON();
         monitor.logs = await ArrayUptimeLogs(logs, 'devices');
 
+        const incidentsData = await IncidentsDevices.findAll({
+            where: { uuidDevices: uuid },
+            order: [['createdAt', 'DESC']]
+        });
+
+        const incidents = incidentsData.map(incident => {
+            const inc = incident.toJSON();
+            if (inc.started) {
+                const dateObj = new Date(Number(inc.started));
+                // add 7 hours
+                const adjustedStarted = new Date(dateObj.getTime() + 7 * 60 * 60 * 1000);
+                inc.started = dateFormat.format(adjustedStarted);
+            }
+            if (inc.resolved && inc.resolved !== "-") {
+                const dateObj = new Date(Number(inc.resolved));
+                const adjustedResolved = new Date(dateObj.getTime() + 7 * 60 * 60 * 1000);
+                inc.resolved = dateFormat.format(adjustedResolved);
+            }
+            return inc;
+        });
+        monitor.incidents = incidents;
+
         const docDefinition = DevicesPDFTemplates(monitor);
         const pdfDoc = printer.createPdfKitDocument(docDefinition);
 
@@ -109,6 +143,8 @@ export const MonitorDevicesPDF = async (req, res) => {
         pdfDoc.pipe(res);
         pdfDoc.end();
     } catch (error) {
+        console.log(error.message);
+        
         res.status(500).json({ msg: error.message });
     }
 };
