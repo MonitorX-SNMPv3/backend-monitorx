@@ -10,8 +10,12 @@ import { ArrayUptimeLogs } from "../../utils/logsHelper.js";
 export const createMonitorHTTPs = async (req, res) => {
     const { uuidUsers, hostname, ipaddress, statusCheck } = req.body;
 
-    if ( !uuidUsers || !hostname || !ipaddress || !statusCheck ) {
+    if ( !uuidUsers || !hostname || !ipaddress ) {
         return res.status(400).json({ msg: "Pastikan Hostname dan IP Address tidak kosong!" });
+    }
+
+    if ( !statusCheck ) {
+        return res.status(400).json({ msg: "Status Check Kosong!"});
     }
     
     if (!ipaddress.startsWith("http://") && !ipaddress.startsWith("https://")) {

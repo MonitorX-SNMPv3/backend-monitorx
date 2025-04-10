@@ -29,51 +29,40 @@ const ConvertMStoFormatUptime = (ms) => {
     return `${days}d ${hours}h ${minutes}m ${seconds}s`;
 };
 
-const CalculateUptimeHTTPs = async (attribute) => {
-    const LogsData = await LogsPorts.findOne({ 
-        where: { uuidPorts: attribute.uuidPorts }, 
-        order: [['createdAt', 'DESC']] 
-    });
-
-    if (!LogsData) {
-        return HandleUptimeWithStatusCheck(attribute.statusCheck);
-    }
-
-    let uptimePrev = LogsData.uptime;
-    const prevCreatedTime = new Date(LogsData.createdAt).getTime();
-    const nowTime = Date.now();
-
-    if (uptimePrev !== "N/A") {
-        const uptimePrevMs = ConvertUptimeToMs(uptimePrev);
-        const elapsedTime = nowTime - prevCreatedTime;
-        const totalUptimeMs = uptimePrevMs + elapsedTime;
-        return ConvertMStoFormatUptime(totalUptimeMs);
-    } else {
-        return HandleUptimeWithStatusCheck(attribute.statusCheck);
-    }
-};
-
 const CalculateUptimePorts = async (attribute) => {
-    const LogsData = await LogsPorts.findOne({ 
-        where: { uuidPorts: attribute.uuidPorts }, 
-        order: [['createdAt', 'DESC']] 
-    });
+    try {
+        const monitor = await MonitorPorts.findOne({
+            where: { uuidPorts: attribute.uuidPorts }
+        });
+    
+        const LogsData = await LogsPorts.findOne({ 
+            where: { uuidPorts: attribute.uuidPorts }, 
+            order: [['createdAt', 'DESC']] 
+        });
 
-    if (!LogsData) {
-        return HandleUptimeWithStatusCheck(attribute.statusCheck);
-    }
-
-    let uptimePrev = LogsData.uptime;
-    const prevCreatedTime = new Date(LogsData.createdAt).getTime();
-    const nowTime = Date.now();
-
-    if (uptimePrev !== "N/A") {
-        const uptimePrevMs = ConvertUptimeToMs(uptimePrev);
-        const elapsedTime = nowTime - prevCreatedTime;
-        const totalUptimeMs = uptimePrevMs + elapsedTime;
-        return ConvertMStoFormatUptime(totalUptimeMs);
-    } else {
-        return HandleUptimeWithStatusCheck(attribute.statusCheck);
+        if (!monitor) {
+            throw new Error("Tidak ada Monitor!");
+        }
+    
+        if (!LogsData) {
+            return HandleUptimeWithStatusCheck(attribute.statusCheck);
+        }
+    
+        let uptimePrev = LogsData.uptime;
+        const prevCreatedTime = new Date(LogsData.createdAt).getTime();
+        const nowTime = Date.now();
+    
+        if (uptimePrev !== "N/A") {
+            const uptimePrevMs = ConvertUptimeToMs(uptimePrev);
+            const elapsedTime = nowTime - prevCreatedTime;
+            const totalUptimeMs = uptimePrevMs + elapsedTime;
+            return ConvertMStoFormatUptime(totalUptimeMs);
+        } else {
+            return HandleUptimeWithStatusCheck(attribute.statusCheck);
+        }
+        
+    } catch (error) {
+        
     }
 };
 

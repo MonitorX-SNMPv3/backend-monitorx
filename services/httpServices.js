@@ -30,26 +30,39 @@ const ConvertMStoFormatUptime = (ms) => {
 };
 
 const CalculateUptimeHTTPs = async (attribute) => {
-    const LogsData = await LogsHTTPs.findOne({ 
-        where: { uuidHTTPs: attribute.uuidHTTPs }, 
-        order: [['createdAt', 'DESC']] 
-    });
+    try {
+        const monitor = await MonitorHTTPs.findOne({
+            where: { uuidHTTPs: attribute.uuidHTTPs }, 
+        });
+    
+        const LogsData = await LogsHTTPs.findOne({ 
+            where: { uuidHTTPs: attribute.uuidHTTPs }, 
+            order: [['createdAt', 'DESC']] 
+        });
+        
+        if (!monitor) {
+            throw new Error("Tidak ada Monitor!");
+        }
 
-    if (!LogsData) {
-        return HandleUptimeWithStatusCheck(attribute.statusCheck);
-    }
-
-    let uptimePrev = LogsData.uptime;
-    const prevCreatedTime = new Date(LogsData.createdAt).getTime();
-    const nowTime = Date.now();
-
-    if (uptimePrev !== "N/A") {
-        const uptimePrevMs = ConvertUptimeToMs(uptimePrev);
-        const elapsedTime = nowTime - prevCreatedTime;
-        const totalUptimeMs = uptimePrevMs + elapsedTime;
-        return ConvertMStoFormatUptime(totalUptimeMs);
-    } else {
-        return HandleUptimeWithStatusCheck(attribute.statusCheck);
+        if (!LogsData) {
+            return HandleUptimeWithStatusCheck(attribute?.statusCheck);
+        }
+    
+        let uptimePrev = LogsData.uptime;
+        const prevCreatedTime = new Date(LogsData.createdAt).getTime();
+        const nowTime = Date.now();
+    
+        if (uptimePrev !== "N/A") {
+            const uptimePrevMs = ConvertUptimeToMs(uptimePrev);
+            const elapsedTime = nowTime - prevCreatedTime;
+            const totalUptimeMs = uptimePrevMs + elapsedTime;
+            return ConvertMStoFormatUptime(totalUptimeMs);
+        } else {
+            return HandleUptimeWithStatusCheck(attribute.statusCheck);
+        }
+    } catch (error) {
+        console.log(error.message);
+        
     }
 };
 

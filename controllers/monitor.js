@@ -222,7 +222,7 @@ export const DeleteMonitor = async (req, res) => {
     const { uuid, type } = req.body;
     let model = null;
     let where = {};
-    let nameField = "hostname"; // default field nama monitor (ubah sesuai model)
+    let nameField = "hostname";
 
     try {
         if (type === "https" || type === "http") {

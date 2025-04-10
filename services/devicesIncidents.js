@@ -18,6 +18,11 @@ export const HandleOngoingIncidentsDevices = async ( attribute ) => {
         
         if (!incidents) {
             const devices = await MonitorDevices.findOne({ where: { uuidDevices: attribute.uuidDevices }});
+            
+            if (!devices) {
+                throw new Error("Tidak ada Monitor!");
+            }
+            
             const duration = durations[devices.statusCheck] || undefined;
             
             console.log(`[${new Date().toLocaleString()}] - Incidents not found! Creating Incidents...`);
