@@ -40,16 +40,9 @@ export const createMonitorPorts = async (req, res) => {
 export const UpdateMonitorPorts = async (req, res) => {
     const { uuid, hostname, ipaddress, port, protocol, statusCheck } = req.body;
 
-    if (!uuid || !hostname || !ipaddress || !port || !protocol || !statusCheck) {
-        return res.status(400).json({ msg: "Data ada yang kosong! Isi semua kolom yang ada!" });
-    }
-
-    if (!ipaddress.startsWith("http://") && !ipaddress.startsWith("https://")) {
-        return res.status(400).json({ msg: "IP Address harus dimulai dengan 'http://' atau 'https://'" });
-    }
-
     try {
         const monitor = await MonitorPorts.findOne({ where: { uuidPorts: uuid } });
+        
         if (!monitor) {
             return res.status(404).json({ msg: "Monitor tidak ditemukan" });
         }
